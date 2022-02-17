@@ -1,16 +1,15 @@
 
 
 import math
-
-# from qiskit import *
 from qiskit import Aer, QuantumCircuit, QuantumRegister, transpile, assemble
 import numpy as np
+import pandas as pd
 from qiskit.circuit.library import XGate
 from qiskit.circuit import ControlledGate
 
 usim = Aer.get_backend('aer_simulator')
-from Coins import Coin, HadamardCoin, GroverCoin, Control, CylicController
-from binaryMethods import binary_step_down, binary_step_up
+from DiffusionProject.Algorithms.Coins import Coin, HadamardCoin, GroverCoin, Control, CylicController
+from DiffusionProject.Algorithms.binaryMethods import binary_step_down, binary_step_up
 
 class Boundary:
 
@@ -126,6 +125,9 @@ class QuantumWalk:
         # initialise state
         self.initial_states = initial_states
         self.initialise_states()
+
+        #store results
+        self.results = None
 
     def initialise_states(self) -> None:
         """initialises the quantum circuit to the values defines in `self.initial_states`"""
@@ -307,6 +309,7 @@ class QuantumWalk:
             displacement_tensors["probability_density"].append(1.0*value/shots)
 
 
+        self.results = displacement_tensors
         return (displacement_tensors, counts) if return_counts else displacement_tensors
 
     def run_experiment(self,n_steps,shots = 1024):
@@ -320,6 +323,46 @@ class QuantumWalk:
         self.add_n_steps(n_steps=n_steps)
         return self.get_results(shots=shots)
 
+
+
+    def get_covariance_tensor(self,force_rerun = False):
+        """returns the covariance tensor of the quantum walk"""
+        if self.results is None or force_rerun:
+            self.get_results()
+
+        dimension_displacements = {}
+        for key, value in self.results.items():
+            if key == "probability_density":
+                continue
+            dim = "d"+str(key)[-1]
+            dimension_displacements[dim] = value
+
+        dimension_displacements = pd.DataFrame(dimension_displacements)
+        return dimension_displacements.corr()
+
+
+        
+
+        
+
+class QuantumWalk3D(QuantumWalk):
+    def __init__(self, system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class=None, boundaries=[]) -> None:
+        assert len(system_dimensions) == 3
+        super().__init__(system_dimensions, initial_states, n_shift_coin_bits, coin_class, boundaries)
+
+    def step(self) -> None:
+        self.add_coins()
+        for boundary in self.boundaries:
+            self.apply_boundary(boundary)
+        # dimension 0
+        self.wrap_shift(operator = self.add_left_shift,coin_bitstring = "100",dimension=0)
+        self.wrap_shift(operator = self.add_right_shift,coin_bitstring = "000",dimension=0)
+        # dimension 1
+        self.wrap_shift(operator = self.add_left_shift,coin_bitstring = "101",dimension=1)
+        self.wrap_shift(operator = self.add_right_shift,coin_bitstring = "001",dimension=1)
+        # dimension 2
+        self.wrap_shift(operator = self.add_left_shift,coin_bitstring = "110",dimension=2)
+        self.wrap_shift(operator = self.add_right_shift,coin_bitstring = "010",dimension=2)
 
 class QuantumWalk2D(QuantumWalk):
     def __init__(self, system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class=None, boundaries=[]) -> None:
