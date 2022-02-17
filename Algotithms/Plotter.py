@@ -37,6 +37,8 @@ for experiment_number in range(1,30):
     print("running experiment {}".format(experiment_number))
     results = walk.get_results(shots=512)
     x,y,alpha = results["dimension_0"],results["dimension_1"],results["probability_density"]
+
+    
     plt.scatter(x,y,alpha=[i**(1/n_qubits) for i in alpha],linewidths=[20*(i*n_qubits)**0.5 for i in alpha], s = [400*(i*n_qubits)**0.5 for i in alpha])
     plt.xlim(0,15)
     plt.ylim(0,15)
