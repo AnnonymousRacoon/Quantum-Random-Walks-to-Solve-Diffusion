@@ -198,7 +198,7 @@ class QuantumWalk:
     def add_boundary_coins(self):
         """Adds boundary control coins"""
         for boundary in self.boundaries:
-            if boundary.ctrl and type(boundary.ctrl) == Coin:
+            if boundary.ctrl and type(boundary.ctrl) != CylicController:
                 boundary_ctrl = boundary.ctrl.gate
                 self.quantum_circuit.append(boundary_ctrl,boundary.register[:])
     

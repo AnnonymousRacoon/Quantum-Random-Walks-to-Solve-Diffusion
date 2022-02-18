@@ -7,13 +7,13 @@ echo "Loading Modules"
 source $WORK/test-env/bin/activate
 
 
-cp $WORK/DiffusionProject/Evaluation/evaluate_variance_2D.py .
+cp $WORK/DiffusionProject/Evaluation/evaluate_variance_3D.py .
 
 echo "exporting to PATH"
 export PYTHONPATH="${PYTHONPATH}:/rds/general/user/db3115/home/"
 
 echo "Running python"
-python3 evaluate_variance_2D.py
+python3 evaluate_variance_3D.py
 
 
 echo "Copying files"
