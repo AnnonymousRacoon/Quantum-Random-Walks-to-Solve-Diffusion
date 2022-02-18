@@ -24,13 +24,19 @@ walk.step()
 
 
 
-
-print("Experiementing in 2 dimensions with on a {}*{} closed grid and a {}".format(2**n_qubits,2**n_qubits, walk.shift_coin._name))
-for experiment_number in range(1,30):
+stepsize = 10
+print("Experimenting in 2 dimensions with on a {}*{} closed grid and a {}".format(2**n_qubits,2**n_qubits, walk.shift_coin._name))
+for experiment_number in range(1,11,stepsize):
     print("results after {} timesteps".format(experiment_number))
-    results = walk.get_results(shots=1024)
+    results = walk.get_results(shots=2048)
+
+    # save_results
+    results = pd.DataFrame(results)
+    results.to_csv("2D_Walk_{}x{}_iteration_{}_{}_results.csv".format(2**n_qubits,2**n_qubits,experiment_number, walk.shift_coin._name))
+
     covariance_matrix = walk.get_covariance_tensor()
     print(covariance_matrix)
+    walk.add_n_steps(stepsize)
 
 
     

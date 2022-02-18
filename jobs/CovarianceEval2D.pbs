@@ -1,0 +1,22 @@
+#!/bin/bash
+#PBS -lwalltime=24:00:00
+#PBS -lselect=1:ncpus=10:mem=120gb
+echo "Loading Modules"
+
+# source python virtual environment
+source $WORK/test-env/bin/activate
+
+
+cp $WORK/DiffusionProject/Evaluation/evaluate_variance.py .
+
+echo "exporting to PATH"
+export PYTHONPATH="${PYTHONPATH}:/rds/general/user/db3115/home/"
+
+echo "Running python"
+python3 evaluate_variance.py
+
+
+echo "Copying files"
+mkdir $WORK/$PBS_JOBID
+cp * $WORK/$PBS_JOBID
+echo "Done"

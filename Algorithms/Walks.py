@@ -2,14 +2,10 @@
 
 import math
 from qiskit import Aer, QuantumCircuit, QuantumRegister, transpile, assemble
-import numpy as np
 import pandas as pd
-from qiskit.circuit.library import XGate
-from qiskit.circuit import ControlledGate
 
 usim = Aer.get_backend('aer_simulator')
 from DiffusionProject.Algorithms.Coins import Coin, HadamardCoin, GroverCoin, Control, CylicController
-from DiffusionProject.Algorithms.binaryMethods import binary_step_down, binary_step_up
 
 class Boundary:
 
@@ -338,6 +334,7 @@ class QuantumWalk:
             dimension_displacements[dim] = value
 
         dimension_displacements = pd.DataFrame(dimension_displacements)
+        print(dimension_displacements.head())
         return dimension_displacements.corr()
 
 
