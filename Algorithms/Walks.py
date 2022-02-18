@@ -334,7 +334,6 @@ class QuantumWalk:
             dimension_displacements[dim] = value
 
         dimension_displacements = pd.DataFrame(dimension_displacements)
-        print(dimension_displacements.head())
         return dimension_displacements.corr()
 
 
