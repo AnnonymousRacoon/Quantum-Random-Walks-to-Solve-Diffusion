@@ -7,8 +7,8 @@ import subprocess
 
 class Experiment:
     
-    def __init__(self,n_dims,n_qubits,shots,max_iterations,stepsize, coin_class = HadamardCoin) -> None:
-        self.n_dims
+    def __init__(self,n_dims,n_qubits,shots,max_iterations,stepsize, coin_class = HadamardCoin, experiment_name = None) -> None:
+        self.n_dims = n_dims
         self.n_qubits = n_qubits
         self.shots = shots
         self.max_iterations = max_iterations
@@ -25,12 +25,22 @@ class Experiment:
                 bitstring = bin_value*n_qubits
                 self.boundaries.append(Boundary(bitstring,dimension=dimension))
 
+        # initialise walk
         self.walk = QuantumWalk(self.system_dims,self.initial_states,coin_class=coin_class,boundaries=self.boundaries)
         self.walk.step()
 
+        # name experiment
+        self.coin_name = str(self.walk.shift_coin._name).split()[0]
+        if experiment_name is None:
+            self.path = "Experiment_{}_dims_{}_qubits_{}_coin".format(self.n_dims,self.n_qubits,self.coin_name)
+        else:
+            self.path = experiment_name
+
+
     def _build_filetree(self):
-        subprocess.run("mkdir images", shell=True)
-        subprocess.run("mkdir data", shell=True)
+        subprocess.run("mkdir {}".format(self.path), shell=True)
+        subprocess.run("mkdir {}/images".format(self.path), shell=True)
+        subprocess.run("mkdir {}/data".format(self.path), shell=True)
 
     def _plot_distribution(self, experiment_number, results, plot_path):
         if self.n_dims == 2:
@@ -43,24 +53,32 @@ class Experiment:
 
     def _run_experiment(self):
         """runs a monte carlo simulation after a varied number of timesteps specified by `self.stepsize` and `self.max_iterations`"""
+        debug_file_path = self.path + '/debug.txt'
+        with open(debug_file_path, 'w') as f:
+            f.write('Debug output for a {} coined walk on a {} dimensional system with {} qubit dimensions:\n'.format(self.coin_name,self.n_dims,self.n_qubits))
         # begin experiment
         for experiment_number in range(1,self.max_iterations+1,self.stepsize):
 
             experiment_name = "{}D_Walk_{}_bit_iteration_{}_{}".format(self.n_dims,2**self.n_qubits,experiment_number, self.walk.shift_coin._name)
-            data_path = "data/{}_results.csv".format(experiment_name)
-            plot_path = "images/{}.png".format(experiment_name)
+            data_path = self.path + "/data/{}_results.csv".format(experiment_name)
+            plot_path = self.path + "/images/{}.png".format(experiment_name)
             
-            results = self.walk.get_results(shots=self.shots)
-            print("results after {} timesteps".format(experiment_number))
-
             # save and plot results
+            results = self.walk.get_results(shots=self.shots)
             results = pd.DataFrame(results)
             results.to_csv(data_path)
             self._plot_distribution(experiment_number=experiment_number, results=results, plot_path=plot_path)
 
             # get covariance
             covariance_matrix = self.walk.get_covariance_tensor()
+
+            # output diffusion tensor to debig output
+            print("diffusion tensor after {} timesteps\n".format(experiment_number))
             print(covariance_matrix)
+            with open(debug_file_path, 'a') as f:
+                f.write("\ndiffusion tensor after {} timesteps\n".format(experiment_number))
+                f.write('{}'.format(covariance_matrix))
+
             self.walk.add_n_steps(self.stepsize)
 
     def run(self):
@@ -70,8 +88,8 @@ class Experiment:
 
 class Experiment2D(Experiment):
 
-    def __init__(self, n_qubits, shots, max_iterations, stepsize, coin_class = HadamardCoin) -> None:
-        super().__init__(2, n_qubits, shots, max_iterations, stepsize, coin_class)
+    def __init__(self, n_qubits, shots, max_iterations, stepsize, coin_class = HadamardCoin, experiment_name = None) -> None:
+        super().__init__(2, n_qubits, shots, max_iterations, stepsize, coin_class, experiment_name)
 
         # initialise walk
         self.walk = QuantumWalk2D(self.system_dims,self.initial_states,coin_class=coin_class,boundaries=self.boundaries)
@@ -84,12 +102,12 @@ class Experiment2D(Experiment):
 
     def _run_experiment(self):
         print("Experimenting in {} dimensions with on a {}*{} closed grid and a {}".format(self.n_dims,2**self.n_qubits,2**self.n_qubits, self.walk.shift_coin._name))
-        return super().run_experiment()
+        return super()._run_experiment()
 
 class Experiment3D(Experiment):
     
-    def __init__(self, n_qubits, shots, max_iterations, stepsize, coin_class = HadamardCoin) -> None:
-        super().__init__(3, n_qubits, shots, max_iterations, stepsize, coin_class)
+    def __init__(self, n_qubits, shots, max_iterations, stepsize, coin_class = HadamardCoin, experiment_name = None) -> None:
+        super().__init__(3, n_qubits, shots, max_iterations, stepsize, coin_class, experiment_name)
 
         # initialise walk
         self.walk = QuantumWalk3D(self.system_dims,self.initial_states,coin_class=coin_class,boundaries=self.boundaries)
@@ -102,4 +120,4 @@ class Experiment3D(Experiment):
 
     def _run_experiment(self):
         print("Experimenting in {0} dimensions with on a {1}*{1}*{1} closed grid and a {2}".format(self.n_dims,2**self.n_qubits, self.walk.shift_coin._name))
-        return super().run_experiment()
+        return super()._run_experiment()
