@@ -1,6 +1,7 @@
 #!/bin/bash
-#PBS -lwalltime=24:00:00
+#PBS -lwalltime=48:00:00
 #PBS -lselect=1:ncpus=10:mem=120gb
+echo "Current date: $now"
 echo "Loading Modules"
 
 # source python virtual environment

@@ -2,11 +2,33 @@
 
 import math
 from qiskit import Aer, QuantumCircuit, QuantumRegister, transpile, assemble
+from qiskit.providers.aer import AerError
 import pandas as pd
-
-usim = Aer.get_backend('aer_simulator')
 from DiffusionProject.Algorithms.Coins import Coin, HadamardCoin, GroverCoin, Control, CylicController
 
+class Backend:
+    """wrapper for Qiskit sim backend """
+    def __init__(self,use_GPU = False) -> None:
+        self.__simulator = Aer.get_backend('aer_simulator')
+        self.__device = "CPU"
+        # init GPU backend
+        if use_GPU:
+            try:
+                self.__simulator.set_options(device='GPU')
+                self.__device = "GPU"
+            except AerError as e:
+                print(e)
+
+        print("running on device: {}".format(self.__device))
+
+    @property
+    def simulator(self):
+        return self.__simulator
+
+    @property
+    def device(self):
+        return self.__device
+        
 class Boundary:
 
     def __init__(self,bitstring: str, ctrl: Coin = None, ctrl_state = None, dimension = 0, label = None) -> None:
@@ -84,7 +106,10 @@ class OneWayBoundary(Boundary):
 
 class QuantumWalk:
 
-    def __init__(self,system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class = None, boundaries = [] ) -> None:
+    def __init__(self,backend: Backend ,system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class = None, boundaries = [] ) -> None:
+
+        # qiskit sim backend
+        self.backend = backend
 
         # initialise dimensional states:
         self.state_registers = []
@@ -285,9 +310,9 @@ class QuantumWalk:
 
         quantum_circuit_copy = self.quantum_circuit.copy()
         quantum_circuit_copy.measure_all()
-        transpiled_circuit = transpile(quantum_circuit_copy, usim)
+        transpiled_circuit = transpile(quantum_circuit_copy, self.backend.simulator)
         qobj = assemble(transpiled_circuit,shots = shots)
-        results = usim.run(qobj).result()
+        results = self.backend.simulator.run(qobj).result()
         counts = results.get_counts()
         counts = self.discard_non_state_bits(counts, False)
 
@@ -342,9 +367,9 @@ class QuantumWalk:
         
 
 class QuantumWalk3D(QuantumWalk):
-    def __init__(self, system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class=None, boundaries=[]) -> None:
+    def __init__(self,backend: Backend, system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class=None, boundaries=[]) -> None:
         assert len(system_dimensions) == 3
-        super().__init__(system_dimensions, initial_states, n_shift_coin_bits, coin_class, boundaries)
+        super().__init__(backend,system_dimensions, initial_states, n_shift_coin_bits, coin_class, boundaries)
 
     def step(self) -> None:
         self.add_coins()
@@ -361,9 +386,9 @@ class QuantumWalk3D(QuantumWalk):
         self.wrap_shift(operator = self.add_right_shift,coin_bitstring = "010",dimension=2)
 
 class QuantumWalk2D(QuantumWalk):
-    def __init__(self, system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class=None, boundaries=[]) -> None:
+    def __init__(self,backend: Backend, system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class=None, boundaries=[]) -> None:
         assert len(system_dimensions) == 2
-        super().__init__(system_dimensions, initial_states, n_shift_coin_bits, coin_class, boundaries)
+        super().__init__(backend,system_dimensions, initial_states, n_shift_coin_bits, coin_class, boundaries)
 
     def step(self) -> None:
         self.add_coins()
@@ -378,9 +403,9 @@ class QuantumWalk2D(QuantumWalk):
 
 
 class QuantumWalk1D(QuantumWalk):
-    def __init__(self, system_dimensions: int, initial_states: str = None, n_shift_coin_bits: int = None, coin_class=None, boundaries=[]) -> None:
+    def __init__(self,backend: Backend, system_dimensions: int, initial_states: str = None, n_shift_coin_bits: int = None, coin_class=None, boundaries=[]) -> None:
         assert type(system_dimensions) == int
-        super().__init__([system_dimensions], [initial_states], n_shift_coin_bits, coin_class, boundaries)
+        super().__init__(backend,[system_dimensions], [initial_states], n_shift_coin_bits, coin_class, boundaries)
 
 
     def step(self) -> None:

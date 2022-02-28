@@ -17,7 +17,7 @@ def plot_distribution2D(results,n_qubits,savepath,title = None):
         alpha = [i**(1/4) for i in probability_density]
     else:
         alpha = None
-    plt.scatter(x,y,alpha=alpha,linewidths=[20*i**0.5 for i in alpha], s = [400*i**0.5 for i in probability_density])
+    plt.scatter(x,y,alpha=alpha,linewidths=[20*i**0.5 for i in probability_density], s = [400*i**0.5 for i in probability_density])
     plt.xlim(0,axes_limit)
     plt.ylim(0,axes_limit)
     plt.xlabel('X')

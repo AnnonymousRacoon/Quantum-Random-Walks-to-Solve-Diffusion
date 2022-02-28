@@ -1,6 +1,6 @@
 #!/bin/bash
 #PBS -lwalltime=48:00:00
-#PBS -lselect=1:ncpus=10:mem=120gb
+#PBS -lselect=1:ncpus=20:mem=240gb
 echo "Current date: $now"
 echo "Loading Modules"
 
@@ -8,16 +8,16 @@ echo "Loading Modules"
 source $WORK/test-env/bin/activate
 
 
-cp $WORK/DiffusionProject/Evaluation/evaluate_variance_2D.py .
+cp $WORK/DiffusionProject/Evaluation/evaluate_diffusion_tensor_Grover.py .
 
 echo "exporting to PATH"
 export PYTHONPATH="${PYTHONPATH}:/rds/general/user/db3115/home/"
 
 echo "Running python"
-python3 evaluate_variance_2D.py
+python3 evaluate_diffusion_tensor_Grover.py
 
 
 echo "Copying files"
-mkdir $WORK/$PBS_JOBID
-cp -r * $WORK/$PBS_JOBID
+mkdir $WORK/Results/$PBS_JOBID
+cp -r * $WORK/Results/$PBS_JOBID
 echo "Done"
