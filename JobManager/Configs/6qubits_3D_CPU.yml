@@ -35,5 +35,4 @@ JobParams:
   NCPUs: 32
   Memory: 32
   Walltime: 24
-  NCores: 
   BatchSize: 1

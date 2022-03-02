@@ -111,8 +111,8 @@ class Config:
             self._generate_job_file([self.__experiment_params["NSteps"]])
         else:
             batches = self._generate_batch_steps()
-            for batch_idx, batch in enumerate (batches):
-                self._generate_job_file(batch, batch_idx)
+            for batch in batches:
+                self._generate_job_file(batch)
 
     def _generate_job_file(self,step_numbers):
         """generates a `.pbs` jobs file """
@@ -159,7 +159,7 @@ class Config:
     def _remove_job_files(self):
         subprocess.run("rm -r jobs", shell=True)
 
-    def run(self,delete_job_files = True):
+    def run(self,delete_job_files = False):
         self._build_job_filetree()
         self._build_save_directory()
         self._generate_job_files()

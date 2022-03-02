@@ -1,4 +1,4 @@
-Name: "5qubits3D"
+Name: "7qubits3D"
 ExperimentParams:
   Type: Batch
   BatchParams:
@@ -6,27 +6,27 @@ ExperimentParams:
     StartIterations: 0
     MaxIterations: 200
   NDims: 3
-  NQubits: 5
+  NQubits: 7
   Coin: "Hadamard"
   InitialStates: "auto"
   Boundaries:
     - Type: "Hard"
-      Bitstring: "00000"
+      Bitstring: "0000000"
       Dim: 0
     - Type: "Hard"
-      Bitstring: "11111"
+      Bitstring: "1111111"
       Dim: 0
     - Type: "Hard"
-      Bitstring: "00000"
+      Bitstring: "0000000"
       Dim: 1
     - Type: "Hard"
-      Bitstring: "11111"
+      Bitstring: "1111111"
       Dim: 1
     - Type: "Hard"
-      Bitstring: "00000"
+      Bitstring: "0000000"
       Dim: 2
     - Type: "Hard"
-      Bitstring: "11111"
+      Bitstring: "1111111"
       Dim: 2
   InitialState: "auto"
   Shots: 2048
