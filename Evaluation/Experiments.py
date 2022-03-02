@@ -43,6 +43,7 @@ class Experiment:
         subprocess.run("mkdir {}".format(self.path), shell=True)
         subprocess.run("mkdir {}/images".format(self.path), shell=True)
         subprocess.run("mkdir {}/data".format(self.path), shell=True)
+        subprocess.run("mkdir {}/debug".format(self.path), shell=True)
 
     def _plot_distribution(self, experiment_number, results, plot_path):
         if self.n_dims == 2:
@@ -55,7 +56,7 @@ class Experiment:
 
     def _run_experiment(self):
         """runs a monte carlo simulation after a varied number of timesteps specified by `self.stepsize` and `self.max_iterations`"""
-        debug_file_path = self.path + '/debug.txt'
+        debug_file_path = self.path + 'debug/debug.txt'
         with open(debug_file_path, 'w') as f:
             f.write('Debug output for a {} coined walk on a {} dimensional system with {} qubit dimensions:\n'.format(self.coin_name,self.n_dims,self.n_qubits))
         # begin experiment
@@ -154,13 +155,14 @@ class SingleExperiment(Experiment):
             plot_distribution3D(results=results,n_qubits=self.n_qubits,savepath=plot_path,title=title)
 
     def _run_experiment(self):
-        debug_file_path = self.path + '/debug.txt'
+        experiment_name = "{}D_Walk_{}_bit_{}_{}_steps".format(self.n_dims,2**self.n_qubits, self.walk.shift_coin._name,self.n_steps)
+        debug_file_path = self.path + 'debug/debug_{}.txt'.format(experiment_name)
         with open(debug_file_path, 'w') as f:
-            f.write('Debug output for a {} coined walk on a {} dimensional system with {} qubit dimensions:\n'.format(self.coin_name,self.n_dims,self.n_qubits))
+            f.write('\nDebug output for a {} coined walk on a {} dimensional system with {} qubit dimensions after {} steps:\n'.format(self.coin_name,self.n_dims,self.n_qubits,self.n_steps))
         # begin experiment
         
 
-        experiment_name = "{}D_Walk_{}_bit_{}_{}_steps".format(self.n_dims,2**self.n_qubits, self.walk.shift_coin._name,self.n_steps)
+       
         data_path = self.path + "/data/{}_results.csv".format(experiment_name)
         plot_path = self.path + "/images/{}.png".format(experiment_name)
             
