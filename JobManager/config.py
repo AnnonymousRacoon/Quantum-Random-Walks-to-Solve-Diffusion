@@ -1,6 +1,7 @@
 import yaml
 import math
 import subprocess
+from datetime import datetime
 
 class Config:
     def __init__(self,path) -> None:
@@ -11,6 +12,20 @@ class Config:
         self.n_dimensional_qubits = self.__experiment_params.get("NQubits")
         self.boundaries = self.__experiment_params.get("Boundaries")
         self.job_files = []
+        self.__savepath = None
+        self.path = path
+
+    @property
+    def savepath(self):
+        if self.__savepath == None:
+            now = datetime.now()
+            dt_string = now.strftime("-%d-%m-%Y-%H-%M-%S")
+            self.__savepath = "$WORK/Results/" + self.__config.get("Name","Experiment") + dt_string
+
+        return self.__savepath
+
+
+
 
     def _build_filetree(self):
         subprocess.run("mkdir jobs", shell=True)
@@ -58,7 +73,7 @@ class Config:
 
 
     def _write_file_transfer(self,file):
-        file.write('cp -r * $WORK/Results/$PBS_JOBID\n')
+        file.write('cp -r * {}\n'.format(self.savepath))
 
     def _generate_batch_steps(self) -> list:
         """Divides up the experiments into batches"""
@@ -87,10 +102,10 @@ class Config:
             self._generate_job_file([self.__experiment_params["NSteps"]])
         else:
             batches = self._generate_batch_steps()
-            for batch in batches:
-                self._generate_job_file(batch)
+            for batch_idx, batch in enumerate (batches):
+                self._generate_job_file(batch, batch_idx)
 
-    def _generate_job_file(self,step_numbers):
+    def _generate_job_file(self,step_numbers, batch_idx = 0):
         """generates a `.pbs` jobs file """
 
         filename = 'batch{}.pbs'.format(len(self.job_files))
@@ -108,11 +123,20 @@ class Config:
             else:
                 walltime = min(self.__job_params.get('Walltime',48),48)
                 nCPUs = self.__job_params.get("NCPUs", 8)
-                mem = math.ceil(self.required_mem)
+                mem = max(math.ceil(self.required_mem), self.__job_params.get("Memory",0))
                 f.write('#PBS -lselect=1:ncpus={}:mem={}gb\n'.format(nCPUs,mem))
 
             f.write('#PBS -lwalltime={}:00:00\n'.format(walltime))
-            f.write('mkdir $WORK/Results/$PBS_JOBID\n')
+            if batch_idx ==0:
+                
+                f.write('mkdir {}\n'.format(self.savepath))
+                f.write('cp $WORK/{} {}\n'.format(self.path, self.savepath))
+                f.write('touch {}/job_list.txt\n'.format(self.savepath))
+
+            f.write('echo $PBS_JOBID > {}/job_list.txt\n'.format(self.savepath))
+            f.write('echo " " > {}/job_list.txt\n'.format(self.savepath))
+
+            
             f.write('source $WORK/test-env/bin/activate\n')
             f.write('export PYTHONPATH="${PYTHONPATH}:/rds/general/user/db3115/home/"\n')
             for n_steps in step_numbers:
@@ -133,7 +157,4 @@ class Config:
         self._build_filetree()
         self._generate_job_files()
         self._submit_job_files()
-
-
-
-        
+        # self._remove_job_files()

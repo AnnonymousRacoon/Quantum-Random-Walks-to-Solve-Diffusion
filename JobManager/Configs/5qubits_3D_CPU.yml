@@ -1,39 +1,39 @@
-
-Name : "Debug"
+Name: "5qubits3D"
 ExperimentParams:
-  Type: Single
+  Type: Batch
   BatchParams:
     StepSize: 10
     StartIterations: 0
-    MaxIterations: 100
-  NSteps: 10
-  NDims: 2
-  NQubits: 3
+    MaxIterations: 200
+  NDims: 3
+  NQubits: 5
   Coin: "Hadamard"
   InitialStates: "auto"
   Boundaries:
     - Type: "Hard"
-      Bitstring: "000"
+      Bitstring: "00000"
       Dim: 0
     - Type: "Hard"
-      Bitstring: "111"
+      Bitstring: "11111"
       Dim: 0
     - Type: "Hard"
-      Bitstring: "000"
+      Bitstring: "00000"
       Dim: 1
     - Type: "Hard"
-      Bitstring: "111"
+      Bitstring: "11111"
       Dim: 1
+    - Type: "Hard"
+      Bitstring: "00000"
+      Dim: 2
+    - Type: "Hard"
+      Bitstring: "11111"
+      Dim: 2
   InitialState: "auto"
   Shots: 2048
 
 JobParams:
-  UseGPU: false
-  GPUType: "K80"
-  NGPUs: 1
-  NCPUs: 8
-  Memory: 16
+  NCPUs: 32
+  Memory: 32
   Walltime: 24
   NCores: 
-  BatchSize: 5
-
+  BatchSize: 1
