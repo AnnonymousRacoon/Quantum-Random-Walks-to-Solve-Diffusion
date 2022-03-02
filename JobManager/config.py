@@ -133,8 +133,8 @@ class Config:
                 f.write('cp $WORK/{} {}\n'.format(self.path, self.savepath))
                 f.write('touch {}/job_list.txt\n'.format(self.savepath))
 
-            f.write('echo $PBS_JOBID > {}/job_list.txt\n'.format(self.savepath))
-            f.write('echo " " > {}/job_list.txt\n'.format(self.savepath))
+            f.write('echo $PBS_JOBID >> {}/job_list.txt\n'.format(self.savepath))
+            f.write(r'echo "\n"'+' >> {}/job_list.txt\n'.format(self.savepath))
 
             
             f.write('source $WORK/test-env/bin/activate\n')

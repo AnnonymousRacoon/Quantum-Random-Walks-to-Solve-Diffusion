@@ -6,7 +6,7 @@ ExperimentParams:
     StartIterations: 0
     MaxIterations: 200
   NDims: 3
-  NQubits: 5
+  NQubits: 6
   Coin: "Hadamard"
   InitialStates: "auto"
   Boundaries:
