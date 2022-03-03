@@ -1,4 +1,4 @@
-Name: "7qubits3D"
+Name: "7qubits3D_Grover"
 ExperimentParams:
   Type: Batch
   BatchParams:
@@ -7,7 +7,7 @@ ExperimentParams:
     MaxIterations: 200
   NDims: 3
   NQubits: 7
-  Coin: "Hadamard"
+  Coin: "Grover"
   InitialStates: "auto"
   Boundaries:
     - Type: "Hard"

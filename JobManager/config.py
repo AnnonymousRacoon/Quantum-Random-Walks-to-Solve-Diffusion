@@ -63,6 +63,32 @@ class Config:
         
         return n_boundary_qubits + n_spacial_qubits
 
+    def _write_boundary(self,file):
+        """appends args to set boundary conditions in a call to `DiffusionProject.JobManager.Driver.py`"""
+        for boundary in self.boundaries:
+            if boundary.get("Geometry"):
+                
+                if boundary["Geometry"] == "Edges":
+                    bitstrings = []
+                    for bin_value in ["0","1"]:
+                        bitstrings.append(bin_value*self.n_dimensional_qubits)
+
+                # default to all dims if no dimension specified
+                if boundary.get("Dim"):
+                    dims = [boundary["Dim"]]
+                else:
+                    dims = [i for i in range(self.n_dims)]
+
+                # apply all bitstrings to all dimensions specified
+                for dimension in range(dims):
+                    for bitstring in bitstrings:
+                        file.write(' --b {}-{}-{}-{}-{}'.format(boundary["Type"], dimension, bitstring, boundary.get("NQubits",""), boundary.get("ControlClass","")))
+
+            
+            else:
+                # if boundary is fully defined by the user
+                file.write(' --b {}-{}-{}-{}-{}'.format(boundary["Type"],boundary["Dim"],boundary["Bitstring"],boundary.get("NQubits",""),boundary.get("ControlClass","")))
+        
     def _write_experiment(self, file, n_steps, use_GPU = False):
         driver_path = '/rds/general/user/db3115/home/DiffusionProject/JobManager/Driver.py'
         file.write('python3 {} --nd {} --nq {} --ns {}'.format(driver_path,self.n_dims,self.n_dimensional_qubits,n_steps))
@@ -159,10 +185,10 @@ class Config:
     def _remove_job_files(self):
         subprocess.run("rm -r jobs", shell=True)
 
-    def run(self,delete_job_files = False):
+    def run(self):
         self._build_job_filetree()
         self._build_save_directory()
         self._generate_job_files()
         self._submit_job_files()
-        if delete_job_files:
+        if not self.__config.get("KeepJobFiles", False):
             self._remove_job_files()

@@ -1,4 +1,4 @@
-Name: "7qubits3D"
+Name: "6qubits3D_Grover"
 ExperimentParams:
   Type: Batch
   BatchParams:
@@ -6,27 +6,27 @@ ExperimentParams:
     StartIterations: 0
     MaxIterations: 200
   NDims: 3
-  NQubits: 7
-  Coin: "Hadamard"
+  NQubits: 6
+  Coin: "Grover"
   InitialStates: "auto"
   Boundaries:
     - Type: "Hard"
-      Bitstring: "0000000"
+      Bitstring: "000000"
       Dim: 0
     - Type: "Hard"
-      Bitstring: "1111111"
+      Bitstring: "111111"
       Dim: 0
     - Type: "Hard"
-      Bitstring: "0000000"
+      Bitstring: "000000"
       Dim: 1
     - Type: "Hard"
-      Bitstring: "1111111"
+      Bitstring: "111111"
       Dim: 1
     - Type: "Hard"
-      Bitstring: "0000000"
+      Bitstring: "000000"
       Dim: 2
     - Type: "Hard"
-      Bitstring: "1111111"
+      Bitstring: "111111"
       Dim: 2
   InitialState: "auto"
   Shots: 2048
@@ -34,5 +34,5 @@ ExperimentParams:
 JobParams:
   NCPUs: 32
   Memory: 32
-  Walltime: 48
+  Walltime: 24
   BatchSize: 1

@@ -1,8 +1,11 @@
 from DiffusionProject.Algorithms.Coins import HadamardCoin
-from DiffusionProject.Algorithms.Walks import Backend, Boundary,QuantumWalk, QuantumWalk1D, QuantumWalk2D, QuantumWalk3D, OneWayBoundary
+from DiffusionProject.Algorithms.Walks import Backend,QuantumWalk, QuantumWalk1D, QuantumWalk2D, QuantumWalk3D
+from DiffusionProject.Algorithms.Boundaries import Boundary,OneWayBoundary
 from DiffusionProject.Evaluation.Plotter import plot_distribution2D, plot_distribution3D
+from DiffusionProject.Utils.timer import Timer
 import pandas as pd
 import subprocess
+
 
 
 class Experiment:
@@ -156,7 +159,7 @@ class SingleExperiment(Experiment):
 
     def _run_experiment(self):
         experiment_name = "{}D_Walk_{}_bit_{}_{}_steps".format(self.n_dims,2**self.n_qubits, self.walk.shift_coin._name,self.n_steps)
-        debug_file_path = self.path + 'debug/debug_{}.txt'.format(experiment_name)
+        debug_file_path = self.path + '/debug/debug_{}.txt'.format(experiment_name)
         with open(debug_file_path, 'w') as f:
             f.write('\nDebug output for a {} coined walk on a {} dimensional system with {} qubit dimensions after {} steps:\n'.format(self.coin_name,self.n_dims,self.n_qubits,self.n_steps))
         # begin experiment
@@ -167,7 +170,10 @@ class SingleExperiment(Experiment):
         plot_path = self.path + "/images/{}.png".format(experiment_name)
             
         # save and plot results
+        timer = Timer()
+        timer.start()
         results = self.walk.run_experiment(n_steps=self.n_steps, shots=self.shots)
+        elapsed_time = timer.stop()
         results = pd.DataFrame(results)
         results.to_csv(data_path)
         self._plot_distribution(results=results, plot_path=plot_path)
@@ -176,10 +182,12 @@ class SingleExperiment(Experiment):
         covariance_matrix = self.walk.get_covariance_tensor()
 
         # output diffusion tensor to debig output
+        print("Elapsed experiment time: {} ".format(Timer.seconds_to_hms(elapsed_time)))
         print("diffusion tensor\n")
         print(covariance_matrix)
         with open(debug_file_path, 'a') as f:
-            f.write("\ndiffusion tensor\n")
+            f.write("\nElapsed experiment time: {}\n".format(Timer.seconds_to_hms(elapsed_time)))
+            f.write("diffusion tensor\n")
             f.write('{}'.format(covariance_matrix))
 
 

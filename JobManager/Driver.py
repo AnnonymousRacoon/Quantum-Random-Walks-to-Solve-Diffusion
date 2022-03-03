@@ -1,5 +1,6 @@
 from DiffusionProject.Algorithms.Coins import HadamardCoin, GroverCoin, CylicController
-from DiffusionProject.Algorithms.Walks import Backend, Boundary, OneWayBoundary, QuantumWalk1D, QuantumWalk2D, QuantumWalk3D
+from DiffusionProject.Algorithms.Walks import Backend, QuantumWalk1D, QuantumWalk2D, QuantumWalk3D
+from DiffusionProject.Algorithms.Boundaries import Boundary, OneWayBoundary
 from DiffusionProject.Evaluation.Experiments import Experiment, SingleExperiment
 import argparse
 
