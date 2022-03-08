@@ -1,0 +1,35 @@
+Name: "7qubits2D_Grover_4096shots_62gb"
+ExperimentParams:
+  Type: Batch
+  BatchParams:
+    StepSize: 10
+    StartIterations: 140
+    MaxIterations: 300
+  NDims: 2
+  NQubits: 7
+  Coin: "Grover"
+  InitialStates: "auto"
+  Boundaries:
+    - Type: "Hard"
+      Bitstring: "0000000"
+      Dim: 0
+    - Type: "Hard"
+      Bitstring: "1111111"
+      Dim: 0
+    - Type: "Hard"
+      Bitstring: "0000000"
+      Dim: 1
+    - Type: "Hard"
+      Bitstring: "1111111"
+      Dim: 1
+
+  InitialState: "auto"
+  Shots: 4096
+
+JobParams:
+  NCPUs: 32
+  Memory: 62
+  Walltime: 72
+  BatchSize: 1
+
+KeepJobFiles: false

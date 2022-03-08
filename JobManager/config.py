@@ -158,7 +158,7 @@ class Config:
                 walltime = min(self.__job_params.get('Walltime',24),24)
                 f.write('#PBS -lselect=1:ncpus={}:mem={}gb:ngpus={}:gpu_type={}\n'.format(nCPUs,mem,nGPUs,GPU))
             else:
-                walltime = min(self.__job_params.get('Walltime',48),48)
+                walltime = min(self.__job_params.get('Walltime',72),72)
                 nCPUs = self.__job_params.get("NCPUs", 8)
                 mem = max(math.ceil(self.required_mem), self.__job_params.get("Memory",0))
                 f.write('#PBS -lselect=1:ncpus={}:mem={}gb\n'.format(nCPUs,mem))
