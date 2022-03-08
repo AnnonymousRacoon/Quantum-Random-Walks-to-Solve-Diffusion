@@ -157,6 +157,11 @@ class QuantumWalk:
         self.add_shift_coin()
         self.add_boundary_coins()
         self.quantum_circuit.barrier()
+
+    def reset_boundaries(self):
+        for boundary in self.boundaries:
+            boundary.reset_register(self.quantum_circuit)
+
         
     def add_left_shift(self,dimension):
         """Performs the left shift (-1) operator on the target register specified by its `dimension`"""
@@ -310,6 +315,7 @@ class QuantumWalk3D(QuantumWalk):
         # dimension 2
         self.wrap_shift(operator = self.add_left_shift,coin_bitstring = "110",dimension=2)
         self.wrap_shift(operator = self.add_right_shift,coin_bitstring = "010",dimension=2)
+        self.reset_boundaries()
 
 class QuantumWalk2D(QuantumWalk):
     def __init__(self,backend: Backend, system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class=None, boundaries=[]) -> None:
@@ -326,12 +332,15 @@ class QuantumWalk2D(QuantumWalk):
         # dimension 1
         self.wrap_shift(operator = self.add_left_shift,coin_bitstring = "11",dimension=1)
         self.wrap_shift(operator = self.add_right_shift,coin_bitstring = "01",dimension=1)
+        self.reset_boundaries()
 
 
 class QuantumWalk1D(QuantumWalk):
     def __init__(self,backend: Backend, system_dimensions: int, initial_states: str = None, n_shift_coin_bits: int = None, coin_class=None, boundaries=[]) -> None:
         assert type(system_dimensions) == int
-        super().__init__(backend,[system_dimensions], [initial_states], n_shift_coin_bits, coin_class, boundaries)
+        if initial_states is not None:
+            initial_states = [initial_states]
+        super().__init__(backend,[system_dimensions], initial_states, n_shift_coin_bits, coin_class, boundaries)
 
 
     def step(self) -> None:
@@ -341,3 +350,4 @@ class QuantumWalk1D(QuantumWalk):
         # dimension 0
         self.wrap_shift(operator = self.add_left_shift,coin_bitstring = "1",dimension=0)
         self.wrap_shift(operator = self.add_right_shift,coin_bitstring = "0",dimension=0)
+        self.reset_boundaries()

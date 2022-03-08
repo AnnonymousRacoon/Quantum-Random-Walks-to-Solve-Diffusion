@@ -2,9 +2,28 @@ from qiskit import QuantumRegister
 from DiffusionProject.Algorithms.Coins import Coin, CylicController
 
 class Boundary:
+    """Sets up a boundary in a quantum walk algorithm"""
 
-    def __init__(self,bitstring: str, ctrl: Coin = None, ctrl_state = None, dimension = 0, label = None) -> None:
+    def __init__(self,bitstring: str, ctrl: Coin = None, ctrl_state = None, dimension = 0, n_resets = 2, label = None) -> None:
+        """
+        Sets up a boundary in a quantum walk algorithm
+        
+        bitstring
+            `str`: binary string to represent the boundary position
+        ctrl
+            `DiffusionProject.Algorithms.Coins.Coin`: None : Coin object to regulate boundary permeability
+
+        ctrl_state
+            `str`: defaults to all 1s: bitstring that defines when to enforce the boundary. Only used if the boundary is controlled 
+
+        dimension:
+            `int` : the dimension to apply the boundary to
+
+        n_resets:
+            `int` : the number of times to dirty reset each boundary qubit
+        """
         self._bitstring = bitstring
+        self._n_resets = n_resets
 
         if ctrl is not None:
             self._ctrl_size = ctrl.n_qubits
@@ -30,6 +49,10 @@ class Boundary:
             assert len(ctrl_state) == ctrl.n_qubits
             self._ctrl_state = ctrl_state 
 
+    def reset_register(self,circuit):
+        for qubit_idx in range(self._ctrl_size):
+            for _ in range(self._n_resets):
+                circuit.reset(self._register[qubit_idx])
 
     @property
     def n_bits(self) -> int:
