@@ -2,6 +2,7 @@ import yaml
 import math
 import subprocess
 from datetime import datetime
+from DiffusionProject.Utils.geometry import BoundaryGenerator
 
 class Config:
     def __init__(self,path) -> None:
@@ -69,9 +70,7 @@ class Config:
             if boundary.get("Geometry"):
                 
                 if boundary["Geometry"] == "Edges":
-                    bitstrings = []
-                    for bin_value in ["0","1"]:
-                        bitstrings.append(bin_value*self.n_dimensional_qubits)
+                    bitstrings = BoundaryGenerator.generate_boundaries(boundary["Geometry"],self.n_dimensional_qubits,boundary.get("Padding",0))
 
                 # default to all dims if no dimension specified
                 if boundary.get("Dim"):
@@ -92,8 +91,9 @@ class Config:
     def _write_experiment(self, file, n_steps, use_GPU = False):
         driver_path = '/rds/general/user/db3115/home/DiffusionProject/JobManager/Driver.py'
         file.write('python3 {} --nd {} --nq {} --ns {}'.format(driver_path,self.n_dims,self.n_dimensional_qubits,n_steps))
-        for boundary in self.boundaries:
-            file.write(' --b {}-{}-{}-{}-{}'.format(boundary["Type"],boundary["Dim"],boundary["Bitstring"],boundary.get("NQubits",""),boundary.get("ControlClass","")))
+    
+        self._write_boundary(file)
+        
         if self.__experiment_params.get("InitialState"):
             file.write(' --in {}'.format(self.__experiment_params.get("InitialState")))
         if self.__experiment_params.get("Coin"):
