@@ -35,6 +35,15 @@ class Backend:
 class QuantumWalk:
 
     def __init__(self,backend: Backend ,system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class = None, boundaries = [] ) -> None:
+        """
+        Create a new `QuantumWalk` Object
+        Args:
+            backend (`DiffusionProject.Algorithms.Walks.Backend`): The Qiskit backend to run the simulation on\n
+            system_dimensions ([int]): a list of the number of qubits used to represent each succesive dimension. e.g for a 2qubitx3qubit system pass in [2,3]\n
+            initial_states ([str]) a list of bitsrings to represent the initial state of the system. e.g ["100","110"]. If no arguments are passed the system will start in all 0 states
+
+        
+        """
 
         # qiskit sim backend
         self.backend = backend
