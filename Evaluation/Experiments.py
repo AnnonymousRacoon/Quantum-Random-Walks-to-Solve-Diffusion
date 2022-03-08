@@ -141,7 +141,7 @@ class debugExperiment(Experiment):
 
 class SingleExperiment(Experiment):
 
-    def __init__(self, walk, n_dims, n_qubits, shots, n_steps, experiment_name=None) -> None:
+    def __init__(self, walk : QuantumWalk, n_dims, n_qubits, shots, n_steps, experiment_name=None) -> None:
         self.walk = walk
         self.n_steps = n_steps
         self.n_dims = n_dims
@@ -168,6 +168,10 @@ class SingleExperiment(Experiment):
        
         data_path = self.path + "/data/{}_results.csv".format(experiment_name)
         plot_path = self.path + "/images/{}.png".format(experiment_name)
+        circuit_diagram_path = self.path + "circuit_diagram.png"
+
+        # draw the circuit
+        self.walk.draw_debug(circuit_diagram_path)
             
         # save and plot results
         timer = Timer()

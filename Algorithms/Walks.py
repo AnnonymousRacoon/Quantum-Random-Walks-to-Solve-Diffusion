@@ -1,7 +1,9 @@
 
 
+from fileinput import filename
 import math
 from qiskit import Aer, QuantumCircuit, QuantumRegister, transpile, assemble
+from qiskit.tools.visualization import circuit_drawer
 from qiskit.providers.aer import AerError
 import pandas as pd
 from DiffusionProject.Algorithms.Coins import HadamardCoin, CylicController
@@ -268,12 +270,31 @@ class QuantumWalk:
         """runs a quantum walk of `n_steps` """
 
         # reset_circuit
-        self.build_ciruit()
-        self.initialise_states()
+        self.reset_circuit()
 
         # add n_steps
         self.add_n_steps(n_steps=n_steps)
         return self.get_results(shots=shots)
+
+    def draw_circuit(self,savepath) -> None:
+        """draws the circuit and saves the image to the path passed into `savepath`"""
+        style = {'dpi' : 250}
+        circuit_drawer(self.quantum_circuit, output='mpl',filename=savepath, style = style)
+
+    def draw_debug(self,savepath):
+        self.reset_circuit()
+        self.step()
+        self.quantum_circuit.measure_all()
+        self.draw_circuit(savepath)
+        self.reset_circuit()
+      
+
+    def reset_circuit(self):
+        """clears the circuit and initialises to its initial states"""
+        self.build_ciruit()
+        self.initialise_states()
+        
+
 
 
 
