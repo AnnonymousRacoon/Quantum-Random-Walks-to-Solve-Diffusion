@@ -81,12 +81,12 @@ class Config:
                 # apply all bitstrings to all dimensions specified
                 for dimension in range(dims):
                     for bitstring in bitstrings:
-                        file.write(' --b {}-{}-{}-{}-{}'.format(boundary["Type"], dimension, bitstring, boundary.get("NQubits",""), boundary.get("ControlClass","")))
+                        file.write(' --b {}-{}-{}-{}-{}'.format(boundary["Type"], dimension, bitstring, boundary.get("ControlClass",""), boundary.get("NQubits","")))
 
             
             else:
                 # if boundary is fully defined by the user
-                file.write(' --b {}-{}-{}-{}-{}'.format(boundary["Type"],boundary["Dim"],boundary["Bitstring"],boundary.get("NQubits",""),boundary.get("ControlClass","")))
+                file.write(' --b {}-{}-{}-{}-{}'.format(boundary["Type"],boundary["Dim"],boundary["Bitstring"],boundary.get("ControlClass",""),boundary.get("NQubits","")))
         
     def _write_experiment(self, file, n_steps, use_GPU = False):
         driver_path = '/rds/general/user/db3115/home/DiffusionProject/JobManager/Driver.py'
