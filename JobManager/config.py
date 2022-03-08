@@ -79,7 +79,7 @@ class Config:
                     dims = [i for i in range(self.n_dims)]
 
                 # apply all bitstrings to all dimensions specified
-                for dimension in range(dims):
+                for dimension in dims:
                     for bitstring in bitstrings:
                         file.write(' --b {}-{}-{}-{}-{}'.format(boundary["Type"], dimension, bitstring, boundary.get("ControlClass",""), boundary.get("NQubits","")))
 

@@ -1,0 +1,29 @@
+Name: "Soft_boundary_debug"
+ExperimentParams:
+  Type: Single
+  NSteps: 2
+  NDims: 2
+  NQubits: 4
+  Coin: "Grover"
+  InitialStates: "auto"
+  Boundaries:
+
+    - Geometry: "Edges"
+      Type: "Soft"
+      ControlClass: "Hadamard"
+      Padding: 4
+
+    - Type: "Hard"
+      Geometry: "Edges"
+  
+
+  InitialState: "auto"
+  Shots: 2048
+
+JobParams:
+  NCPUs: 32
+  Memory: 16
+  Walltime: 24
+  BatchSize: 1
+
+KeepJobFiles: true

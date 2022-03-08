@@ -65,7 +65,7 @@ if args.get("boundary"):
         boundary_type, boundary_dimension, boundary_bitstring = boundary_args[0], int(boundary_args[1]), boundary_args[2]
         if boundary_type.lower() == 'h' or boundary_type.lower() == 'hard':
             boundaries.append(Boundary(boundary_bitstring,dimension=boundary_dimension))
-        elif boundary_type == 's':
+        elif boundary_type.lower() == 's' or boundary_type.lower() == 'soft':
             if len(boundary_args) == 5 and boundary_args[4] != "":
                 n_boundary_qubits = boundary_args[4]
             else:
