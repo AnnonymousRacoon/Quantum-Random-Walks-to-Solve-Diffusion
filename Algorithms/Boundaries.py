@@ -7,7 +7,7 @@ class Boundary:
     def __init__(self,bitstring: str, ctrl: Coin = None, ctrl_state = None, dimension = 0, n_resets = 2, label = None) -> None:
         """
         Sets up a boundary in a quantum walk algorithm
-        
+
         bitstring
             `str`: binary string to represent the boundary position
         ctrl
