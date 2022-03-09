@@ -1,13 +1,11 @@
 
-
-from fileinput import filename
 import math
 from qiskit import Aer, QuantumCircuit, QuantumRegister, transpile, assemble
 from qiskit.tools.visualization import circuit_drawer
 from qiskit.providers.aer import AerError
 import pandas as pd
 from DiffusionProject.Algorithms.Coins import HadamardCoin, CylicController
-from DiffusionProject.Algorithms.Boundaries import Boundary, OneWayBoundary
+from DiffusionProject.Algorithms.Boundaries import Boundary, OneWayBoundaryControl, BoundaryControl
 
 class Backend:
     """wrapper for Qiskit sim backend """
@@ -34,7 +32,7 @@ class Backend:
         
 class QuantumWalk:
 
-    def __init__(self,backend: Backend ,system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class = None, boundaries = [] ) -> None:
+    def __init__(self,backend: Backend ,system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class = None, boundary_controls = [] ) -> None:
         """
         Create a new `QuantumWalk` Object
         Args:
@@ -58,13 +56,14 @@ class QuantumWalk:
             self.state_registers.append(QuantumRegister(n_qubits,register_name))
 
         # initialise boundary control registers:
-        self.boundaries = boundaries
+        self.boundary_controls = boundary_controls
         self.boundary_control_registers = []
-        for boundary in self.boundaries:
-            assert boundary.dimension >= 0 and boundary.dimension < len(self.system_dimensions)
-            assert boundary.n_bits == self.system_dimensions[boundary.dimension]
-            if boundary.ctrl is not None or type(boundary) == OneWayBoundary:
-                self.boundary_control_registers.append(boundary.register)
+        for boundary_control in self.boundary_controls:
+            for boundary in boundary_control.boundaries:
+                assert boundary.dimension >= 0 and boundary.dimension < len(self.system_dimensions)
+                assert boundary.n_bits == self.system_dimensions[boundary.dimension]
+            if boundary_control.ctrl is not None or type(boundary_control) == OneWayBoundaryControl:
+                self.boundary_control_registers.append(boundary_control.register)
         
         # initialise coin
         if coin_class == None:
@@ -111,43 +110,45 @@ class QuantumWalk:
         for _ in range(n_steps):
             self.step()
 
-    def apply_boundary(self,boundary : Boundary):
+    def apply_boundary(self,boundary_control : BoundaryControl):
         """Applys boundary condition to environment specified by `boundary`"""
 
-        register = self.state_registers[boundary.dimension]
-        n_control_bits = register.size + boundary.ctrl_size
-        ctrl_state = boundary.bitstring + boundary.ctrl_state
+        for boundary in boundary_control.boundaries:
 
-        # construct boundary logic
-        DReversalGate = self.shift_coin.DReversalGate.control(n_control_bits,ctrl_state=ctrl_state, label = boundary.label)
-        Inverse_coin_gate = self.shift_coin.control(n_control_bits,ctrl_state=ctrl_state, inverse = True, label = boundary.label)
+            register = self.state_registers[boundary.dimension]
+            n_control_bits = register.size + boundary_control.ctrl_size
+            ctrl_state = boundary.bitstring + boundary_control.ctrl_state
 
-        if type(boundary) == OneWayBoundary:
-            n_control_bits = register.size
-            ctrl_state = boundary.bitstring
+            # construct boundary logic
+            DReversalGate = self.shift_coin.DReversalGate.control(n_control_bits,ctrl_state=ctrl_state, label = boundary.label)
             Inverse_coin_gate = self.shift_coin.control(n_control_bits,ctrl_state=ctrl_state, inverse = True, label = boundary.label)
-            
-            DRestorationGate = self.shift_coin.DReversalGate.control(n_control_bits,ctrl_state=ctrl_state, label = boundary.label)
-            CyclicControlGate = boundary.ctrl.control(n_control_bits,ctrl_state=ctrl_state,label = boundary.label)
-            
-            
-            self.quantum_circuit.append(Inverse_coin_gate,register[:]+self.shift_coin_register[:])
-            
-            self.quantum_circuit.append(CyclicControlGate,register[:]+boundary.register[:])
-            self.quantum_circuit.append(DRestorationGate,register[:]+self.shift_coin_register[:])
-            
-            self.quantum_circuit.append(DReversalGate,boundary.register[:]+register[:]+self.shift_coin_register[:])
+
+            if type(boundary_control) == OneWayBoundaryControl:
+                n_control_bits = register.size
+                ctrl_state = boundary.bitstring
+                Inverse_coin_gate = self.shift_coin.control(n_control_bits,ctrl_state=ctrl_state, inverse = True, label = boundary.label)
+                
+                DRestorationGate = self.shift_coin.DReversalGate.control(n_control_bits,ctrl_state=ctrl_state, label = boundary.label)
+                CyclicControlGate = boundary_control.ctrl.control(n_control_bits,ctrl_state=ctrl_state,label = boundary.label)
+                
+                
+                self.quantum_circuit.append(Inverse_coin_gate,register[:]+self.shift_coin_register[:])
+                
+                self.quantum_circuit.append(CyclicControlGate,register[:]+boundary_control.register[:])
+                self.quantum_circuit.append(DRestorationGate,register[:]+self.shift_coin_register[:])
+                
+                self.quantum_circuit.append(DReversalGate,boundary_control.register[:]+register[:]+self.shift_coin_register[:])
             
 
         
    
-        elif boundary.register:
-            self.quantum_circuit.append(Inverse_coin_gate,boundary.register[:]+register[:]+self.shift_coin_register[:])
-            self.quantum_circuit.append(DReversalGate,boundary.register[:]+register[:]+self.shift_coin_register[:])
+            elif boundary_control.register:
+                self.quantum_circuit.append(Inverse_coin_gate,boundary_control.register[:]+register[:]+self.shift_coin_register[:])
+                self.quantum_circuit.append(DReversalGate,boundary_control.register[:]+register[:]+self.shift_coin_register[:])
 
-        else:
-            self.quantum_circuit.append(Inverse_coin_gate,register[:]+self.shift_coin_register[:])
-            self.quantum_circuit.append(DReversalGate,register[:]+self.shift_coin_register[:])
+            else:
+                self.quantum_circuit.append(Inverse_coin_gate,register[:]+self.shift_coin_register[:])
+                self.quantum_circuit.append(DReversalGate,register[:]+self.shift_coin_register[:])
 
 
         self.quantum_circuit.barrier()
@@ -159,10 +160,10 @@ class QuantumWalk:
     
     def add_boundary_coins(self):
         """Adds boundary control coins"""
-        for boundary in self.boundaries:
-            if boundary.ctrl and type(boundary.ctrl) != CylicController:
-                boundary_ctrl = boundary.ctrl.gate
-                self.quantum_circuit.append(boundary_ctrl,boundary.register[:])
+        for boundary_control in self.boundary_controls:
+            if boundary_control.ctrl and type(boundary_control.ctrl) != CylicController:
+                boundary_ctrl = boundary_control.ctrl.gate
+                self.quantum_circuit.append(boundary_ctrl,boundary_control.register[:])
     
     def add_coins(self):
         self.add_shift_coin()
@@ -170,7 +171,7 @@ class QuantumWalk:
         self.quantum_circuit.barrier()
 
     def reset_boundaries(self):
-        for boundary in self.boundaries:
+        for boundary in self.boundary_controls:
             boundary.reset_register(self.quantum_circuit)
 
         
@@ -328,13 +329,13 @@ class QuantumWalk:
         
 
 class QuantumWalk3D(QuantumWalk):
-    def __init__(self,backend: Backend, system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class=None, boundaries=[]) -> None:
+    def __init__(self,backend: Backend, system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class=None, boundary_controls = []) -> None:
         assert len(system_dimensions) == 3
-        super().__init__(backend,system_dimensions, initial_states, n_shift_coin_bits, coin_class, boundaries)
+        super().__init__(backend,system_dimensions, initial_states, n_shift_coin_bits, coin_class, boundary_controls)
 
     def step(self) -> None:
         self.add_coins()
-        for boundary in self.boundaries:
+        for boundary in self.boundary_controls:
             self.apply_boundary(boundary)
         # dimension 0
         self.wrap_shift(operator = self.add_left_shift,coin_bitstring = "100",dimension=0)
@@ -348,13 +349,13 @@ class QuantumWalk3D(QuantumWalk):
         self.reset_boundaries()
 
 class QuantumWalk2D(QuantumWalk):
-    def __init__(self,backend: Backend, system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class=None, boundaries=[]) -> None:
+    def __init__(self,backend: Backend, system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class=None, boundary_controls = []) -> None:
         assert len(system_dimensions) == 2
-        super().__init__(backend,system_dimensions, initial_states, n_shift_coin_bits, coin_class, boundaries)
+        super().__init__(backend,system_dimensions, initial_states, n_shift_coin_bits, coin_class, boundary_controls)
 
     def step(self) -> None:
         self.add_coins()
-        for boundary in self.boundaries:
+        for boundary in self.boundary_controls:
             self.apply_boundary(boundary)
         # dimension 0
         self.wrap_shift(operator = self.add_left_shift,coin_bitstring = "10",dimension=0)
@@ -366,16 +367,16 @@ class QuantumWalk2D(QuantumWalk):
 
 
 class QuantumWalk1D(QuantumWalk):
-    def __init__(self,backend: Backend, system_dimensions: int, initial_states: str = None, n_shift_coin_bits: int = None, coin_class=None, boundaries=[]) -> None:
+    def __init__(self,backend: Backend, system_dimensions: int, initial_states: str = None, n_shift_coin_bits: int = None, coin_class=None, boundary_controls = []) -> None:
         assert type(system_dimensions) == int
         if initial_states is not None:
             initial_states = [initial_states]
-        super().__init__(backend,[system_dimensions], initial_states, n_shift_coin_bits, coin_class, boundaries)
+        super().__init__(backend,[system_dimensions], initial_states, n_shift_coin_bits, coin_class, boundary_controls)
 
 
     def step(self) -> None:
         self.add_coins()
-        for boundary in self.boundaries:
+        for boundary in self.boundary_controls:
             self.apply_boundary(boundary)
         # dimension 0
         self.wrap_shift(operator = self.add_left_shift,coin_bitstring = "1",dimension=0)

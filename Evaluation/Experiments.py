@@ -1,6 +1,6 @@
 from DiffusionProject.Algorithms.Coins import HadamardCoin
 from DiffusionProject.Algorithms.Walks import Backend,QuantumWalk, QuantumWalk1D, QuantumWalk2D, QuantumWalk3D
-from DiffusionProject.Algorithms.Boundaries import Boundary,OneWayBoundary
+from DiffusionProject.Algorithms.Boundaries import BoundaryControl, Boundary
 from DiffusionProject.Evaluation.Plotter import plot_distribution2D, plot_distribution3D
 from DiffusionProject.Utils.timer import Timer
 import pandas as pd
@@ -27,9 +27,11 @@ class Experiment:
             for bin_value in ["0","1"]:
                 bitstring = bin_value*n_qubits
                 self.boundaries.append(Boundary(bitstring,dimension=dimension))
+        self.boundary_control = BoundaryControl()
+        self.boundary_control.add_boundaries(self.boundaries)
 
         # initialise walk
-        self.walk = QuantumWalk(backend, self.system_dims,self.initial_states,coin_class=coin_class,boundaries=self.boundaries)
+        self.walk = QuantumWalk(backend, self.system_dims,self.initial_states,coin_class=coin_class,boundary_controls=[self.boundary_control])
         self.walk.step()
 
         self._set_path(experiment_name)
@@ -95,12 +97,13 @@ class Experiment:
         self._run_experiment()
 
 class Experiment2D(Experiment):
+    """Depricated"""
 
     def __init__(self, backend: Backend, n_qubits, shots, max_iterations, stepsize, coin_class = HadamardCoin, experiment_name = None) -> None:
         super().__init__(backend, 2, n_qubits, shots, max_iterations, stepsize, coin_class, experiment_name)
 
         # initialise walk
-        self.walk = QuantumWalk2D(self.system_dims,self.initial_states,coin_class=coin_class,boundaries=self.boundaries)
+        self.walk = QuantumWalk2D(self.system_dims,self.initial_states,coin_class=coin_class,boundary_controls=[self.boundary_control])
         self.walk.step()
 
     def _plot_distribution(self, experiment_number, results, plot_path):
@@ -113,12 +116,13 @@ class Experiment2D(Experiment):
         return super()._run_experiment()
 
 class Experiment3D(Experiment):
+    """Depricated"""
     
     def __init__(self, backend: Backend, n_qubits, shots, max_iterations, stepsize, coin_class = HadamardCoin, experiment_name = None) -> None:
         super().__init__(backend, 3, n_qubits, shots, max_iterations, stepsize, coin_class, experiment_name)
 
         # initialise walk
-        self.walk = QuantumWalk3D(self.system_dims,self.initial_states,coin_class=coin_class,boundaries=self.boundaries)
+        self.walk = QuantumWalk3D(self.system_dims,self.initial_states,coin_class=coin_class,boundary_controls=[self.boundary_control])
         self.walk.step()
 
     def _plot_distribution(self, experiment_number, results, plot_path):
@@ -131,7 +135,7 @@ class Experiment3D(Experiment):
         return super()._run_experiment()
 
 class debugExperiment(Experiment):
-    """runs a simple debug experiment"""
+    """runs a simple debug experiment - Depricated"""
     def __init__(self, backend: Backend, n_dims, coin_class=HadamardCoin, experiment_name=None) -> None:
         n_qubits = 2
         shots = 128
@@ -169,9 +173,6 @@ class SingleExperiment(Experiment):
         data_path = self.path + "/data/{}_results.csv".format(experiment_name)
         plot_path = self.path + "/images/{}.png".format(experiment_name)
         circuit_diagram_path = self.path + "circuit_diagram.png"
-
-        # draw the circuit
-        self.walk.draw_debug(circuit_diagram_path)
             
         # save and plot results
         timer = Timer()
@@ -181,6 +182,9 @@ class SingleExperiment(Experiment):
         results = pd.DataFrame(results)
         results.to_csv(data_path)
         self._plot_distribution(results=results, plot_path=plot_path)
+
+        # draw the circuit
+        self.walk.draw_debug(circuit_diagram_path)
 
         # get covariance
         covariance_matrix = self.walk.get_covariance_tensor()
