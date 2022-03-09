@@ -2,28 +2,43 @@ from qiskit import QuantumRegister
 from DiffusionProject.Algorithms.Coins import Coin, CylicController
 
 class Boundary:
-    """Sets up a boundary in a quantum walk algorithm"""
+    """Represents a single boundary plane in a quantum walk algorithm"""
 
-    def __init__(self,bitstring: str, ctrl: Coin = None, ctrl_state = None, dimension = 0, n_resets = 2, label = None) -> None:
-        """
-        Sets up a boundary in a quantum walk algorithm
-
-        bitstring
-            `str`: binary string to represent the boundary position
-        ctrl
-            `DiffusionProject.Algorithms.Coins.Coin`: None : Coin object to regulate boundary permeability
-
-        ctrl_state
-            `str`: defaults to all 1s: bitstring that defines when to enforce the boundary. Only used if the boundary is controlled 
-
-        dimension:
-            `int` : the dimension to apply the boundary to
-
-        n_resets:
-            `int` : the number of times to dirty reset each boundary qubit
-        """
+    def __init__(self,bitstring: str, dimension = 0, label = None) -> None:
+        """ """
         self._bitstring = bitstring
+        self._dimension = dimension
+        self._label = label
+            
+    @property
+    def n_bits(self) -> int:
+        """The length of the boundary bitstring"""
+        return len(self._bitstring)
+
+    @property
+    def dimension(self) -> int:
+        return self._dimension
+
+    @property
+    def bitstring(self)-> str:
+        return self._bitstring
+
+    @property
+    def label(self) -> str:
+        return self._label
+
+
+class BoundaryControl:
+    """
+    Controls One or More Boundaries
+    """
+    
+    def __init__(self, ctrl: Coin = None, ctrl_state = None, n_resets = 2, label = None) -> None:
+
+        self._boundaries = []
         self._n_resets = n_resets
+        self._ctrl = ctrl
+        self._label = label
 
         if ctrl is not None:
             self._ctrl_size = ctrl.n_qubits
@@ -33,9 +48,7 @@ class Boundary:
             self._ctrl_size = 0
             self._register = None
 
-        self._ctrl = ctrl
-        self._dimension = dimension
-        self._label = label
+        
 
         if ctrl is None:
             self._ctrl_state = ""
@@ -48,6 +61,13 @@ class Boundary:
             assert ctrl is not None
             assert len(ctrl_state) == ctrl.n_qubits
             self._ctrl_state = ctrl_state 
+        
+    def add_boundary(self,boundary: Boundary):
+        self._boundaries.append(boundary)
+
+    def add_boundaries(self, boundaries: list):
+        for boundary in boundaries:
+            self.add_boundary(boundary)
 
     def reset_register(self,circuit):
         for qubit_idx in range(self._ctrl_size):
@@ -55,13 +75,8 @@ class Boundary:
                 circuit.reset(self._register[qubit_idx])
 
     @property
-    def n_bits(self) -> int:
-        """The length of the boundary bitstring"""
-        return len(self._bitstring)
-
-    @property
-    def dimension(self) -> int:
-        return self._dimension
+    def boundaries(self):
+        return self._boundaries[:]
 
     @property
     def ctrl(self) -> Coin:
@@ -70,10 +85,6 @@ class Boundary:
     @property
     def register(self) -> QuantumRegister:
         return self._register
-
-    @property
-    def bitstring(self)-> str:
-        return self._bitstring
 
     @property
     def ctrl_state(self) -> str:
@@ -92,7 +103,17 @@ class Boundary:
         return self._ctrl != None
 
 
-class OneWayBoundary(Boundary):
-    def __init__(self, bitstring: str, ctrl_state=None, n_boundary_cycle_bits = 3, dimension=0, label=None) -> None:
-        ctrl = CylicController(n_boundary_cycle_bits)
-        super().__init__(bitstring = bitstring, ctrl = ctrl, ctrl_state = ctrl_state, dimension = dimension, label = label)
+
+
+    
+
+
+
+
+class OneWayBoundaryControl(BoundaryControl):
+
+    def __init__(self,bitstring, dimension = 0, ctrl_state=None,n_control_qubits = 4, n_resets=2, label=None) -> None:
+        ctrl = CylicController(n_qubits=n_control_qubits)
+        super().__init__(ctrl, ctrl_state, n_resets, label)
+        boundary = Boundary(bitstring,dimension, label)
+        self.add_boundary(boundary)
