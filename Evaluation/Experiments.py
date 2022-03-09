@@ -97,6 +97,7 @@ class Experiment:
         self._run_experiment()
 
 class Experiment2D(Experiment):
+    """Depricated"""
 
     def __init__(self, backend: Backend, n_qubits, shots, max_iterations, stepsize, coin_class = HadamardCoin, experiment_name = None) -> None:
         super().__init__(backend, 2, n_qubits, shots, max_iterations, stepsize, coin_class, experiment_name)
@@ -115,6 +116,7 @@ class Experiment2D(Experiment):
         return super()._run_experiment()
 
 class Experiment3D(Experiment):
+    """Depricated"""
     
     def __init__(self, backend: Backend, n_qubits, shots, max_iterations, stepsize, coin_class = HadamardCoin, experiment_name = None) -> None:
         super().__init__(backend, 3, n_qubits, shots, max_iterations, stepsize, coin_class, experiment_name)
@@ -133,7 +135,7 @@ class Experiment3D(Experiment):
         return super()._run_experiment()
 
 class debugExperiment(Experiment):
-    """runs a simple debug experiment"""
+    """runs a simple debug experiment - Depricated"""
     def __init__(self, backend: Backend, n_dims, coin_class=HadamardCoin, experiment_name=None) -> None:
         n_qubits = 2
         shots = 128
