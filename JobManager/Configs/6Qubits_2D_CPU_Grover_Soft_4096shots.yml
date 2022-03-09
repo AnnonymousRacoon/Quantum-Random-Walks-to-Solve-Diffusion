@@ -1,0 +1,32 @@
+Name: "6qubits2D_Grover_soft_boundary_4096shots_62gb"
+ExperimentParams:
+  Type: Batch
+  BatchParams:
+    StepSize: 10
+    StartIterations: 0
+    MaxIterations: 200
+  NDims: 2
+  NQubits: 6
+  Coin: "Grover"
+  InitialStates: "auto"
+  Boundaries:
+
+    - Geometry: "Edges"
+      Type: "Soft"
+      ControlClass: "Hadamard"
+      Padding: 7
+
+    - Type: "Hard"
+      Geometry: "Edges"
+  
+
+  InitialState: "auto"
+  Shots: 4096
+
+JobParams:
+  NCPUs: 32
+  Memory: 62
+  Walltime: 72
+  BatchSize: 1
+
+KeepJobFiles: false
