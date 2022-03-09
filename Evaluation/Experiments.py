@@ -172,7 +172,7 @@ class SingleExperiment(Experiment):
        
         data_path = self.path + "/data/{}_results.csv".format(experiment_name)
         plot_path = self.path + "/images/{}.png".format(experiment_name)
-        circuit_diagram_path = self.path + "circuit_diagram.png"
+        circuit_diagram_path = self.path + "/circuit_diagram.png"
             
         # save and plot results
         timer = Timer()
