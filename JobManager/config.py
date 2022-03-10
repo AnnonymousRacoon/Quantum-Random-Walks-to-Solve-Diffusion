@@ -114,7 +114,7 @@ class Config:
         return python_call
 
     def _write_experiment(self, file, n_steps, use_GPU = False):
-        file.write(_write_experiment_string(n_steps, use_GPU))
+        file.write(self._write_experiment_string(n_steps, use_GPU))
         file.write("\n")
         self._write_file_transfer(file)
 
