@@ -280,6 +280,7 @@ class QuantumWalk:
         results = job.result()
         counts = results.get_counts()
         counts = self.discard_non_state_bits(counts, False)
+        shots = results.results[0].shots
 
 
         displacement_tensors = {}
