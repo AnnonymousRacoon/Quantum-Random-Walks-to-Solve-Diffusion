@@ -102,6 +102,6 @@ walk = walk_class(**kwargs)
 
 
 Experiment = SingleExperiment(walk,args["ndims"],args["nqubits"],args["shots"],args["nsteps"])
-Experiment.run()
+Experiment.run_locally()
 
 
