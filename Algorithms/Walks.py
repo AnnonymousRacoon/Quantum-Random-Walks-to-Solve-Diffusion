@@ -3,32 +3,50 @@ import math
 from qiskit import Aer, QuantumCircuit, QuantumRegister, transpile, assemble
 from qiskit.tools.visualization import circuit_drawer
 from qiskit.providers.aer import AerError
+from qiskit import IBMQ
 import pandas as pd
 from DiffusionProject.Algorithms.Coins import HadamardCoin, CylicController
 from DiffusionProject.Algorithms.Boundaries import Boundary, OneWayBoundaryControl, BoundaryControl
 
 class Backend:
-    """wrapper for Qiskit sim backend """
-    def __init__(self,use_GPU = False) -> None:
-        self.__simulator = Aer.get_backend('aer_simulator')
-        self.__device = "CPU"
-        # init GPU backend
-        if use_GPU:
-            try:
-                self.__simulator.set_options(device='GPU')
-                self.__device = "GPU"
-            except AerError as e:
-                print(e)
+    """wrapper for Qiskit backend """
+    def __init__(self,use_GPU = False, IBMQ_device_name = None) -> None:
+
+        if IBMQ_device_name:
+          
+            IBMQ.load_account()
+            self.__provider  = IBMQ.get_provider(hub='ibm-q')
+            self.__backend = self.__provider.get_backend(IBMQ_device_name)
+            self.__device = IBMQ_device_name
+            self.__is_on_IBM = True
+        
+
+        else:
+            self.__backend = Aer.get_backend('aer_simulator')
+            self.__device = "CPU" 
+            self.__is_on_IBM = False
+            # init GPU backend
+            if use_GPU:
+                try:
+                    self.__backend.set_options(device='GPU')
+                    self.__device = "GPU"
+                except AerError as e:
+                    print(e)
 
         print("running on device: {}".format(self.__device))
 
     @property
-    def simulator(self):
-        return self.__simulator
+    def backend(self):
+        return self.__backend
 
     @property
     def device(self):
         return self.__device
+
+    @property
+    def is_on_IBM(self):
+        return self.__is_on_IBM
+
         
 class QuantumWalk:
 
@@ -247,15 +265,19 @@ class QuantumWalk:
         
         return counts_new
 
-    def get_results(self, shots = 1024, return_counts = False) -> dict:
-        """Runs a simulation of the quantum circuit for the number of shits specified by `shots`"""
+
+    def load_results_from_IBM(self, job_id: str, return_elapsed_time = False):
+        """Processes results from an IBM job_id"""
+        job = self.load_job_from_IBM(job_id)
+        queue_position = job.queue_position()
+        assert job.done(), "Job in position {} in the queue, try again later".format(queue_position)
+        return self.get_results(job, return_elapsed_time)
+
+    def get_results(self,job, return_elapsed_time = False) -> dict:
+        """processes results from a Qiskit job"""
         state_register_indices, _ = self.get_state_register_indices()
 
-        quantum_circuit_copy = self.quantum_circuit.copy()
-        quantum_circuit_copy.measure_all()
-        transpiled_circuit = transpile(quantum_circuit_copy, self.backend.simulator)
-        qobj = assemble(transpiled_circuit,shots = shots)
-        results = self.backend.simulator.run(qobj).result()
+        results = job.result()
         counts = results.get_counts()
         counts = self.discard_non_state_bits(counts, False)
 
@@ -274,17 +296,50 @@ class QuantumWalk:
 
 
         self.results = displacement_tensors
-        return (displacement_tensors, counts) if return_counts else displacement_tensors
+        return (displacement_tensors, results.time_taken) if return_elapsed_time else displacement_tensors
 
     def run_experiment(self,n_steps,shots = 1024):
         """runs a quantum walk of `n_steps` """
-
         # reset_circuit
         self.reset_circuit()
 
         # add n_steps
         self.add_n_steps(n_steps=n_steps)
-        return self.get_results(shots=shots)
+
+        # if on IBM submit job
+        if self.backend.is_on_IBM:
+            return self._submit_job_on_IBM(shots)
+
+        return self._run_job_locally(shots)
+
+    def run_job_locally(self, shots = 1024):
+        """Runs a simulation of the quantum circuit for the number of shits specified by `shots`"""
+        quantum_circuit_copy = self.quantum_circuit.copy()
+        quantum_circuit_copy.measure_all()
+        transpiled_circuit = transpile(quantum_circuit_copy, self.backend.backend)
+        qobj = assemble(transpiled_circuit,shots = shots)
+        job = self.backend.backend.run(qobj)
+        return job
+
+    def _submit_job_on_IBM(self, shots = 1024):
+        """Runs a simulation of the quantum circuit for the number of shits specified by `shots` on IBM hardware"""
+        quantum_circuit_copy = self.quantum_circuit.copy()
+        quantum_circuit_copy.measure_all()
+        transpiled_circuit = transpile(quantum_circuit_copy, self.backend.backend)
+        qobj = assemble(transpiled_circuit,backend = self.backend.backend, shots = shots)
+        job = self.backend.backend.run(qobj)
+        print("JOB_ID: {}".format(job.job_id()))
+        return job
+
+    def load_job_from_IBM(self,job_id: str):
+        """Retrieves a completed job run on IBM hardware"""
+        job = self.backend.backend.retrieve_job(job_id)
+        return job
+
+
+
+
+
 
     def draw_circuit(self,savepath) -> None:
         """draws the circuit and saves the image to the path passed into `savepath`"""
@@ -311,7 +366,8 @@ class QuantumWalk:
     def get_covariance_tensor(self,force_rerun = False):
         """returns the covariance tensor of the quantum walk"""
         if self.results is None or force_rerun:
-            self.get_results()
+            job = self._run_job()
+            self.get_results(job)
 
         dimension_displacements = {}
         for key, value in self.results.items():

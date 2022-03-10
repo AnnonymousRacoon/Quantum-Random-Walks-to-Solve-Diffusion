@@ -2,25 +2,13 @@ from DiffusionProject.Algorithms.Coins import HadamardCoin, GroverCoin, CylicCon
 from DiffusionProject.Algorithms.Walks import Backend, QuantumWalk1D, QuantumWalk2D, QuantumWalk3D
 from DiffusionProject.Algorithms.Boundaries import Boundary, OneWayBoundaryControl, BoundaryControl
 from DiffusionProject.Evaluation.Experiments import Experiment, SingleExperiment
-import argparse
+from DiffusionProject.JobManager.experimentParser import ExperimentParser
 
 
+parser = ExperimentParser()
+args = parser.parse_args()
 
-
-my_parser = argparse.ArgumentParser(description='Run a Quantum Walk Simulation')
-my_parser.add_argument('--ndims', action='store', type=int, required=True)
-my_parser.add_argument('--nqubits', action='store', type=int, required=True)
-my_parser.add_argument('--boundary', action='append')
-my_parser.add_argument('--initital_states', action='store', type=str)
-my_parser.add_argument('--coin', action='store', type=str)
-my_parser.add_argument('--nsteps', action='store', type=int, default = 10)
-my_parser.add_argument('--shots', action='store', type=int, default = 2048)
-my_parser.add_argument('--GPU', action='store_true', default = False)
-args = vars(my_parser.parse_args())
-print(args)
-
-
-BACKEND = Backend(use_GPU=args.get("GPU"))
+BACKEND = Backend(use_GPU=args.get("GPU"), IBMQ_device_name=args.get("IBMDeviceName"))
 
 
 coin_class_dict = {
@@ -37,7 +25,6 @@ walk_type_dict = {
     2: QuantumWalk2D,
     3: QuantumWalk3D
 }
-
 
 def generate_boundary_control_code_dict():
     boundaries = {}
@@ -112,6 +99,8 @@ kwargs["backend"] = BACKEND
 
 walk_class = walk_type_dict.get(args["ndims"])
 walk = walk_class(**kwargs)
+
+
 Experiment = SingleExperiment(walk,args["ndims"],args["nqubits"],args["shots"],args["nsteps"])
 Experiment.run()
 

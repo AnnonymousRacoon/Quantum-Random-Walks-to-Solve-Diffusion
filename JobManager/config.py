@@ -64,8 +64,10 @@ class Config:
         
         return n_boundary_qubits + n_spacial_qubits
 
-    def _write_boundary(self,file):
+    def _write_boundary_string(self):
         """appends args to set boundary conditions in a call to `DiffusionProject.JobManager.Driver.py`"""
+        boundary_string = ""
+
         for boundary in self.boundaries:
             if boundary.get("Geometry"):
                 
@@ -81,28 +83,38 @@ class Config:
                 # apply all bitstrings to all dimensions specified
                 for dimension in dims:
                     for bitstring in bitstrings:
-                        file.write(' --b {}-{}-{}-{}-{}'.format(boundary["Type"], dimension, bitstring, boundary.get("ControlClass",""), boundary.get("NQubits","")))
+                       boundary_string = boundary_string + ' --b {}-{}-{}-{}-{}'.format(boundary["Type"], dimension, bitstring, boundary.get("ControlClass",""), boundary.get("NQubits",""))
 
             
             else:
                 # if boundary is fully defined by the user
-                file.write(' --b {}-{}-{}-{}-{}'.format(boundary["Type"],boundary["Dim"],boundary["Bitstring"],boundary.get("ControlClass",""),boundary.get("NQubits","")))
+                boundary_string = boundary_string +' --b {}-{}-{}-{}-{}'.format(boundary["Type"],boundary["Dim"],boundary["Bitstring"],boundary.get("ControlClass",""),boundary.get("NQubits",""))
+
+        return boundary_string
         
-    def _write_experiment(self, file, n_steps, use_GPU = False):
+    def _write_experiment_string(self, n_steps, use_GPU = False, IBM_device_name = None):
+        python_call = ""
+
         driver_path = '/rds/general/user/db3115/home/DiffusionProject/JobManager/Driver.py'
-        file.write('python3 {} --nd {} --nq {} --ns {}'.format(driver_path,self.n_dims,self.n_dimensional_qubits,n_steps))
+        python_call = python_call + 'python3 {} --nd {} --nq {} --ns {}'.format(driver_path,self.n_dims,self.n_dimensional_qubits,n_steps)
     
-        self._write_boundary(file)
+        python_call = python_call + self._write_boundary_string()
         
         if self.__experiment_params.get("InitialState"):
-            file.write(' --in {}'.format(self.__experiment_params.get("InitialState")))
+            python_call = python_call +' --in {}'.format(self.__experiment_params.get("InitialState"))
         if self.__experiment_params.get("Coin"):
-            file.write(' --c {}'.format(self.__experiment_params.get("Coin")))
+            python_call = python_call + ' --c {}'.format(self.__experiment_params.get("Coin"))
         if use_GPU:
-            file.write(' --GPU 1')
+            python_call = python_call + ' --GPU 1'
         if self.__experiment_params.get("Shots"):
-            file.write(' --s {}'.format(self.__experiment_params.get("Shots")))
+            python_call = python_call + ' --s {}'.format(self.__experiment_params.get("Shots"))
+        if IBM_device_name:
+            python_call = python_call + ' --IBMDeviceName {}'.format(IBM_device_name)
 
+        return python_call
+
+    def _write_experiment(self, file, n_steps, use_GPU = False):
+        file.write(_write_experiment_string(n_steps, use_GPU))
         file.write("\n")
         self._write_file_transfer(file)
 
@@ -182,13 +194,31 @@ class Config:
         if verbose:
             subprocess.run("qstat -w -T", shell = True)
 
+
     def _remove_job_files(self):
         subprocess.run("rm -r jobs", shell=True)
 
-    def run(self):
+
+    def _run_on_PBS(self):
         self._build_job_filetree()
         self._build_save_directory()
         self._generate_job_files()
         self._submit_job_files()
         if not self.__config.get("KeepJobFiles", False):
             self._remove_job_files()
+
+
+    def _run_on_IBM(self):
+        """run a single experiment on IBM devices"""
+        assert self.__experiment_params.get("Type","Single") == "Single"
+        device_name = self.__job_params.get('IBMDeviceName')
+        subprocess.run(self._write_experiment_string(IBM_device_name=device_name))
+
+
+    def run(self):
+        if self.__job_params.get('IBMDeviceName'):
+            self._run_on_IBM()
+        else:
+            self._run_on_PBS()
+
+        

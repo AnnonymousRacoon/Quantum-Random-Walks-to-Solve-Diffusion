@@ -161,7 +161,43 @@ class SingleExperiment(Experiment):
             title = "diffusion on an {0}x{0}*{0} grid with a {1}".format(2**self.n_qubits, self.walk.shift_coin._name)
             plot_distribution3D(results=results,n_qubits=self.n_qubits,savepath=plot_path,title=title)
 
-    def _run_experiment(self):
+    def _run_experiment_locally(self):
+        """Run a quantum walk experiment on local hardware"""
+        timer = Timer()
+        timer.start()
+        job = self.walk.run_experiment(n_steps=self.n_steps, shots=self.shots)
+        python_elapsed_time = Timer.seconds_to_hms(timer.stop())
+        print(python_elapsed_time)
+        results, qiskit_time = self.walk.get_results(job,True)
+        self._process_results(results,qiskit_time)
+
+    def submit_job_to_IBM(self):
+
+        job = self.walk.run_experiment(n_steps=self.n_steps, shots=self.shots)
+        job_id = job.job_id()
+
+        with open("IBM_job_list.txt", 'a') as f:
+            f.write("JOBID:{}".format(job_id))
+
+        print("JOB ID: {} submitted succesfully!".format(job_id))
+
+        circuit_diagram_path = self.path + "/circuit_diagram.png"
+        self.walk.draw_debug(circuit_diagram_path)
+
+
+
+    def _process_completed_IBM_job(self):
+
+        with open("IBM_job_list.txt", 'r') as f:
+            job_id = f.readline().split(":")[1]
+        
+        results, qiskit_time = self.walk.load_results_from_IBM(job_id, True)
+        self._process_results(results,qiskit_time)
+
+
+
+
+    def _process_results(self,results,elapsed_time):
         experiment_name = "{}D_Walk_{}_bit_{}_{}_steps".format(self.n_dims,2**self.n_qubits, self.walk.shift_coin._name,self.n_steps)
         debug_file_path = self.path + '/debug/debug_{}.txt'.format(experiment_name)
         with open(debug_file_path, 'w') as f:
@@ -173,12 +209,8 @@ class SingleExperiment(Experiment):
         data_path = self.path + "/data/{}_results.csv".format(experiment_name)
         plot_path = self.path + "/images/{}.png".format(experiment_name)
         circuit_diagram_path = self.path + "/circuit_diagram.png"
-            
-        # save and plot results
-        timer = Timer()
-        timer.start()
-        results = self.walk.run_experiment(n_steps=self.n_steps, shots=self.shots)
-        elapsed_time = timer.stop()
+      
+
         results = pd.DataFrame(results)
         results.to_csv(data_path)
         self._plot_distribution(results=results, plot_path=plot_path)
@@ -201,4 +233,14 @@ class SingleExperiment(Experiment):
 
         print("Experiment Completed!")
 
+
+
+    def run_locally(self):
+        """runs a monte carlo simulation after a varied number of timesteps specified by `self.stepsize` and `self.max_iterations`"""
+        self._build_filetree()
+        self._run_experiment_locally()
+
+    def process_IBM_results(self):
+        self._build_filetree()
+        self._process_completed_IBM_job()
         
