@@ -311,7 +311,7 @@ class QuantumWalk:
         if self.backend.is_on_IBM:
             return self._submit_job_on_IBM(shots)
 
-        return self._run_job_locally(shots)
+        return self.run_job_locally(shots)
 
     def run_job_locally(self, shots = 1024):
         """Runs a simulation of the quantum circuit for the number of shits specified by `shots`"""
