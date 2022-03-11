@@ -259,7 +259,7 @@ class Config:
         else:
             return self.experiment_params.get("InitialState").split()
 
-    def run_on_IBM(self):
+    def _gen_experiment_from_config(self):
         """run a single experiment on IBM devices"""
         assert self.experiment_params.get("Type","Single") == "Single", "Currently only supports single jobs for pushing to IBM devices"
         device_name = self.__job_params.get('IBMDeviceName')
@@ -271,8 +271,19 @@ class Config:
             # unpack for 1D walk
             initial_states = initial_states[0]
         walk = walk_class(BACKEND,system_dimensions=self.n_dimensional_qubits, initial_states=initial_states, coin_class=self.experiment_params.get("Coin"), boundary_controls = boundary_controls)
-        Experiment = SingleExperiment(walk,self.n_dims,self.n_dimensional_qubits,self.experiment_params.get("Shots",1024),self.experiment_params["NSteps"])
-        Experiment.run_locally()
+        experiment = SingleExperiment(walk,self.n_dims,self.n_dimensional_qubits,self.experiment_params.get("Shots",1024),self.experiment_params["NSteps"])
+        return experiment
+
+    def _run_on_IBM(self):
+        experiment = self._gen_experiment_from_config()
+        experiment.submit_job_to_IBM()
+
+    def process_IBM_results(self):
+        experiment = self._gen_experiment_from_config()
+        experiment.process_IBM_results()
+
+
+        
 
         
 

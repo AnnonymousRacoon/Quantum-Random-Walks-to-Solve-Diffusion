@@ -145,13 +145,23 @@ class debugExperiment(Experiment):
 
 class SingleExperiment(Experiment):
 
-    def __init__(self, walk : QuantumWalk, n_dims, n_qubits, shots, n_steps, experiment_name=None) -> None:
+    def __init__(self, walk : QuantumWalk, n_dims, n_qubits, shots, n_steps, experiment_name=None, directory_path = "") -> None:
         self.walk = walk
         self.n_steps = n_steps
         self.n_dims = n_dims
         self.n_qubits = n_qubits
         self.shots = shots
+        self.directory_path = directory_path
+        self.job_id_path = self.directory_path +'/' + "IBM_job_list.txt"
         self._set_path(experiment_name)
+
+    def _set_path(self,experiment_name: None):
+        # name experiment
+        self.coin_name = str(self.walk.shift_coin._name).split()[0]
+        if experiment_name is None:
+            self.path = self.directory_path +'/' + "Experiment_{}_dims_{}_qubits_{}_coin".format(self.n_dims,self.n_qubits,self.coin_name)
+        else:
+            self.path = self.directory_path +'/' + experiment_name
 
     def _plot_distribution(self, results, plot_path):
         if self.n_dims == 2:
@@ -176,7 +186,7 @@ class SingleExperiment(Experiment):
         job = self.walk.run_experiment(n_steps=self.n_steps, shots=self.shots)
         job_id = job.job_id()
 
-        with open("IBM_job_list.txt", 'a') as f:
+        with open(self.job_id_path, 'a') as f:
             f.write("JOBID:{}".format(job_id))
 
         print("JOB ID: {} submitted succesfully!".format(job_id))
@@ -188,7 +198,7 @@ class SingleExperiment(Experiment):
 
     def _process_completed_IBM_job(self):
 
-        with open("IBM_job_list.txt", 'r') as f:
+        with open(self.job_id_path, 'r') as f:
             job_id = f.readline().split(":")[1]
         
         results, qiskit_time = self.walk.load_results_from_IBM(job_id, True)
