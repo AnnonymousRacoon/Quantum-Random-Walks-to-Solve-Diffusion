@@ -1,15 +1,8 @@
 from DiffusionProject.Utils.binaryMethods import binary_step_up, binary_step_down
-from DiffusionProject.Algorithms.Coins import HadamardCoin, GroverCoin, CylicController
+from DiffusionProject.Algorithms.Coins import HadamardCoin
 from DiffusionProject.Algorithms.Boundaries import Boundary, OneWayBoundaryControl, BoundaryControl
+from DiffusionProject.Utils.configCodes import coin_class_dict
 
-coin_class_dict = {
-    "N": None,
-    "Hadamard": HadamardCoin,
-    "H": HadamardCoin,
-    "Grover": GroverCoin,
-    "G": GroverCoin,
-    "Cyclic_controller": CylicController
-}
 
 class BoundaryGenerator:
     

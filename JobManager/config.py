@@ -4,17 +4,10 @@ import subprocess
 from datetime import datetime
 from DiffusionProject.Utils.boundary_generator import BoundaryGenerator
 from DiffusionProject.Algorithms.Boundaries import Boundary, BoundaryControl
-from DiffusionProject.Algorithms.Coins import HadamardCoin, GroverCoin, CylicController
-from DiffusionProject.Algorithms.Walks import Backend, QuantumWalk1D, QuantumWalk2D, QuantumWalk3D
-from DiffusionProject.Algorithms.Boundaries import Boundary, OneWayBoundaryControl, BoundaryControl
-from DiffusionProject.Evaluation.Experiments import Experiment, SingleExperiment
-from DiffusionProject.JobManager.experimentParser import ExperimentParser
+from DiffusionProject.Algorithms.Walks import Backend
+from DiffusionProject.Evaluation.Experiments import  SingleExperiment
+from DiffusionProject.Utils.configCodes import walk_type_dict
 
-walk_type_dict = {
-    1: QuantumWalk1D,
-    2: QuantumWalk2D,
-    3: QuantumWalk3D
-}
 
 class Config:
     def __init__(self,path) -> None:

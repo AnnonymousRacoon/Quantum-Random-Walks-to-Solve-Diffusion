@@ -1,30 +1,15 @@
-from DiffusionProject.Algorithms.Coins import HadamardCoin, GroverCoin, CylicController
-from DiffusionProject.Algorithms.Walks import Backend, QuantumWalk1D, QuantumWalk2D, QuantumWalk3D
+from DiffusionProject.Algorithms.Coins import HadamardCoin
+from DiffusionProject.Algorithms.Walks import Backend
 from DiffusionProject.Algorithms.Boundaries import Boundary, OneWayBoundaryControl, BoundaryControl
 from DiffusionProject.Evaluation.Experiments import Experiment, SingleExperiment
 from DiffusionProject.JobManager.experimentParser import ExperimentParser
+from DiffusionProject.Utils.configCodes import coin_class_dict, walk_type_dict
 
 
 parser = ExperimentParser()
 args = parser.parse_args()
 
 BACKEND = Backend(use_GPU=args.get("GPU"), IBMQ_device_name=args.get("IBMDeviceName"))
-
-
-coin_class_dict = {
-    "N": None,
-    "Hadamard": HadamardCoin,
-    "H": HadamardCoin,
-    "Grover": GroverCoin,
-    "G": GroverCoin,
-    "Cyclic_controller": CylicController
-}
-
-walk_type_dict = {
-    1: QuantumWalk1D,
-    2: QuantumWalk2D,
-    3: QuantumWalk3D
-}
 
 def generate_boundary_control_code_dict():
     boundaries = {}
