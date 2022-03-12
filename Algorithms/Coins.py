@@ -1,6 +1,7 @@
 
 from qiskit import QuantumCircuit
 from qiskit.circuit import ControlledGate, Gate
+from math import pi
 
 
 class Control:
@@ -101,7 +102,98 @@ class GroverCoin(Coin):
          #  -----------
         
         self._gate = self._control_circuit.to_gate(label = self._name)
+
+
+
+class PhaseKickbackCoin(Coin):
+    def __init__(self, n_qubits,lam) -> None:
+        super().__init__(n_qubits)
+        self._name = "Phase Kickback Coin"
+
+        qubit_indices = [i for i in range(n_qubits)]
+
+        #  -----------Diffuser Protocol
+        # Apply transformation |s> -> |00..0> (H-gates)
+        self._control_circuit.h(qubit_indices)
+        # Apply transformation |00..0> -> |11..1> (X-gates)
+        self._control_circuit.x(qubit_indices)
+        # Do multi-controlled-Z gate
+        self._control_circuit.mcp(lam,qubit_indices[:-1], [-1])  # multi-controlled-toffoli
+        # Apply transformation |11..1> -> |00..0>
+        self._control_circuit.x(qubit_indices)
+        # Apply transformation |00..0> -> |s>
+        self._control_circuit.h(qubit_indices)
+         #  -----------
         
+        self._gate = self._control_circuit.to_gate(label = self._name)
+
+
+class RightKickBackCoin(PhaseKickbackCoin):
+    """
+        A Quantum coin similiar to a Grover coin which performs kickback with phase pi/2
+        """
+    def __init__(self, n_qubits) -> None:
+        """
+        A Quantum coin similiar to a Grover coin which performs kickback with phase pi/2
+        """
+        super().__init__(n_qubits, pi/2.0)
+        self._name = "Right Kickback Coin"
+
+class RightPlusKickBackCoin(PhaseKickbackCoin):
+    """
+        A Quantum coin similiar to a Grover coin which performs kickback with phase pi/4
+        """
+    def __init__(self, n_qubits) -> None:
+        """
+        A Quantum coin similiar to a Grover coin which performs kickback with phase pi/4
+        """
+        super().__init__(n_qubits, pi/4.0)
+        self._name = "Right Kickback Coin"
+
+class RightMinusKickBackCoin(PhaseKickbackCoin):
+    """
+        A Quantum coin similiar to a Grover coin which performs kickback with phase 3pi/4
+        """
+    def __init__(self, n_qubits) -> None:
+        """
+        A Quantum coin similiar to a Grover coin which performs kickback with phase 3pi/4
+        """
+        super().__init__(n_qubits, 3*pi/4.0)
+        self._name = "Right Kickback Coin"
+
+
+class LeftKickBackCoin(PhaseKickbackCoin):
+    """
+        A Quantum coin similiar to a Grover coin which performs kickback with phase 3pi/2
+        """
+    def __init__(self, n_qubits) -> None:
+        """
+        A Quantum coin similiar to a Grover coin which performs kickback with phase 3pi/2
+        """
+        super().__init__(n_qubits, 3*pi/2.0)
+        self._name = "Left Kickback Coin"
+
+class LeftMinusKickBackCoin(PhaseKickbackCoin):
+    """
+        A Quantum coin similiar to a Grover coin which performs kickback with phase 5pi/4
+        """
+    def __init__(self, n_qubits) -> None:
+        """
+        A Quantum coin similiar to a Grover coin which performs kickback with phase 5pi/4
+        """
+        super().__init__(n_qubits, 5*pi/4.0)
+        self._name = "Left Kickback Coin"
+
+class LeftPlusKickBackCoin(PhaseKickbackCoin):
+    """
+        A Quantum coin similiar to a Grover coin which performs kickback with phase 7pi/4
+        """
+    def __init__(self, n_qubits) -> None:
+        """
+        A Quantum coin similiar to a Grover coin which performs kickback with phase 7pi/4
+        """
+        super().__init__(n_qubits, 7*pi/4.0)
+        self._name = "Left Kickback Coin"
 
         
 

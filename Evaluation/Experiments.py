@@ -145,13 +145,23 @@ class debugExperiment(Experiment):
 
 class SingleExperiment(Experiment):
 
-    def __init__(self, walk : QuantumWalk, n_dims, n_qubits, shots, n_steps, experiment_name=None) -> None:
+    def __init__(self, walk : QuantumWalk, n_dims, n_qubits, shots, n_steps, experiment_name=None, directory_path = ".") -> None:
         self.walk = walk
         self.n_steps = n_steps
         self.n_dims = n_dims
         self.n_qubits = n_qubits
         self.shots = shots
+        self.directory_path = directory_path
+        self.job_id_path = self.directory_path +'/' + "IBM_job_list.txt"
         self._set_path(experiment_name)
+
+    def _set_path(self,experiment_name: None):
+        # name experiment
+        self.coin_name = str(self.walk.shift_coin._name).split()[0]
+        if experiment_name is None:
+            self.path = self.directory_path +'/' + "Experiment_{}_dims_{}_qubits_{}_coin".format(self.n_dims,self.n_qubits,self.coin_name)
+        else:
+            self.path = self.directory_path +'/' + experiment_name
 
     def _plot_distribution(self, results, plot_path):
         if self.n_dims == 2:
@@ -161,7 +171,43 @@ class SingleExperiment(Experiment):
             title = "diffusion on an {0}x{0}*{0} grid with a {1}".format(2**self.n_qubits, self.walk.shift_coin._name)
             plot_distribution3D(results=results,n_qubits=self.n_qubits,savepath=plot_path,title=title)
 
-    def _run_experiment(self):
+    def _run_experiment_locally(self):
+        """Run a quantum walk experiment on local hardware"""
+        timer = Timer()
+        timer.start()
+        job = self.walk.run_experiment(n_steps=self.n_steps, shots=self.shots)
+        python_elapsed_time = Timer.seconds_to_hms(timer.stop())
+        print(python_elapsed_time)
+        results, qiskit_time = self.walk.get_results(job,True)
+        self._process_results(results,qiskit_time)
+
+    def submit_job_to_IBM(self):
+
+        job = self.walk.run_experiment(n_steps=self.n_steps, shots=self.shots)
+        job_id = job.job_id()
+
+        with open(self.job_id_path, 'a') as f:
+            f.write("JOBID:{}".format(job_id))
+
+        print("JOB ID: {} submitted succesfully!".format(job_id))
+
+        circuit_diagram_path = self.path + "/circuit_diagram.png"
+        self.walk.draw_debug(circuit_diagram_path)
+
+
+
+    def _process_completed_IBM_job(self):
+
+        with open(self.job_id_path, 'r') as f:
+            job_id = f.readline().split(":")[1]
+        
+        results, qiskit_time = self.walk.load_results_from_IBM(job_id, True)
+        self._process_results(results,qiskit_time)
+
+
+
+
+    def _process_results(self,results,elapsed_time):
         experiment_name = "{}D_Walk_{}_bit_{}_{}_steps".format(self.n_dims,2**self.n_qubits, self.walk.shift_coin._name,self.n_steps)
         debug_file_path = self.path + '/debug/debug_{}.txt'.format(experiment_name)
         with open(debug_file_path, 'w') as f:
@@ -173,12 +219,8 @@ class SingleExperiment(Experiment):
         data_path = self.path + "/data/{}_results.csv".format(experiment_name)
         plot_path = self.path + "/images/{}.png".format(experiment_name)
         circuit_diagram_path = self.path + "/circuit_diagram.png"
-            
-        # save and plot results
-        timer = Timer()
-        timer.start()
-        results = self.walk.run_experiment(n_steps=self.n_steps, shots=self.shots)
-        elapsed_time = timer.stop()
+      
+
         results = pd.DataFrame(results)
         results.to_csv(data_path)
         self._plot_distribution(results=results, plot_path=plot_path)
@@ -201,4 +243,14 @@ class SingleExperiment(Experiment):
 
         print("Experiment Completed!")
 
+
+
+    def run_locally(self):
+        """runs a monte carlo simulation after a varied number of timesteps specified by `self.stepsize` and `self.max_iterations`"""
+        self._build_filetree()
+        self._run_experiment_locally()
+
+    def process_IBM_results(self):
+        self._build_filetree()
+        self._process_completed_IBM_job()
         

@@ -2,16 +2,21 @@ import yaml
 import math
 import subprocess
 from datetime import datetime
-from DiffusionProject.Utils.geometry import BoundaryGenerator
+from DiffusionProject.Utils.boundary_generator import BoundaryGenerator
+from DiffusionProject.Algorithms.Boundaries import Boundary, BoundaryControl
+from DiffusionProject.Algorithms.Walks import Backend
+from DiffusionProject.Evaluation.Experiments import  SingleExperiment
+from DiffusionProject.Utils.configCodes import walk_type_dict
+
 
 class Config:
     def __init__(self,path) -> None:
         self.__config = self.parse_config(path)
-        self.__experiment_params = self.__config.get("ExperimentParams")
+        self.experiment_params = self.__config.get("ExperimentParams")
         self.__job_params = self.__config.get("JobParams")
-        self.n_dims = self.__experiment_params.get("NDims")
-        self.n_dimensional_qubits = self.__experiment_params.get("NQubits")
-        self.boundaries = self.__experiment_params.get("Boundaries")
+        self.n_dims = self.experiment_params.get("NDims")
+        self.n_dimensional_qubits = self.experiment_params.get("NQubits")
+        self.boundaries = self.experiment_params.get("Boundaries")
         self.job_files = []
         self.__savepath = None
         self.path = path
@@ -64,13 +69,16 @@ class Config:
         
         return n_boundary_qubits + n_spacial_qubits
 
-    def _write_boundary(self,file):
-        """appends args to set boundary conditions in a call to `DiffusionProject.JobManager.Driver.py`"""
+    def generate_boundary_controls(self):
+        """generates boundary controls from config params"""
+        boundaries = []
+        control_codes = []
+
         for boundary in self.boundaries:
             if boundary.get("Geometry"):
                 
                 if boundary["Geometry"] == "Edges":
-                    bitstrings = BoundaryGenerator.generate_boundaries(boundary["Geometry"],self.n_dimensional_qubits,boundary.get("Padding",0))
+                    bitstrings = BoundaryGenerator.generate_boundary_bitstrings(boundary["Geometry"],self.n_dimensional_qubits,boundary.get("Padding",0))
 
                 # default to all dims if no dimension specified
                 if boundary.get("Dim"):
@@ -81,28 +89,69 @@ class Config:
                 # apply all bitstrings to all dimensions specified
                 for dimension in dims:
                     for bitstring in bitstrings:
-                        file.write(' --b {}-{}-{}-{}-{}'.format(boundary["Type"], dimension, bitstring, boundary.get("ControlClass",""), boundary.get("NQubits","")))
+
+                       boundaries.append(Boundary(bitstring,dimension))
+                       control_codes.append(BoundaryGenerator.generate_boundary_code(boundary_type=boundary["Type"],n_boundary_qubits=int(boundary.get("NQubits",0)),boundary_ctrl_type=boundary.get("ControlClass","Hadamard")))
 
             
             else:
                 # if boundary is fully defined by the user
-                file.write(' --b {}-{}-{}-{}-{}'.format(boundary["Type"],boundary["Dim"],boundary["Bitstring"],boundary.get("ControlClass",""),boundary.get("NQubits","")))
-        
-    def _write_experiment(self, file, n_steps, use_GPU = False):
-        driver_path = '/rds/general/user/db3115/home/DiffusionProject/JobManager/Driver.py'
-        file.write('python3 {} --nd {} --nq {} --ns {}'.format(driver_path,self.n_dims,self.n_dimensional_qubits,n_steps))
-    
-        self._write_boundary(file)
-        
-        if self.__experiment_params.get("InitialState"):
-            file.write(' --in {}'.format(self.__experiment_params.get("InitialState")))
-        if self.__experiment_params.get("Coin"):
-            file.write(' --c {}'.format(self.__experiment_params.get("Coin")))
-        if use_GPU:
-            file.write(' --GPU 1')
-        if self.__experiment_params.get("Shots"):
-            file.write(' --s {}'.format(self.__experiment_params.get("Shots")))
+                boundaries.append(Boundary(boundary["Bitstring"],boundary["Dim"]))
+                control_codes.append(BoundaryGenerator.generate_boundary_code(boundary_type=boundary["Type"],n_boundary_qubits=int(boundary.get("NQubits",0)),boundary_ctrl_type=boundary.get("ControlClass","Hadamard")))
 
+        return BoundaryGenerator.generate_boundary_controls(boundaries=boundaries, boundary_control_codes=control_codes)
+
+    def _write_boundary_string(self):
+        """appends args to set boundary conditions in a call to `DiffusionProject.JobManager.Driver.py`"""
+        boundary_string = ""
+
+        for boundary in self.boundaries:
+            if boundary.get("Geometry"):
+                
+                if boundary["Geometry"] == "Edges":
+                    bitstrings = BoundaryGenerator.generate_boundary_bitstrings(boundary["Geometry"],self.n_dimensional_qubits,boundary.get("Padding",0))
+
+                # default to all dims if no dimension specified
+                if boundary.get("Dim"):
+                    dims = [boundary["Dim"]]
+                else:
+                    dims = [i for i in range(self.n_dims)]
+
+                # apply all bitstrings to all dimensions specified
+                for dimension in dims:
+                    for bitstring in bitstrings:
+                       boundary_string = boundary_string + ' --b {}-{}-{}-{}-{}'.format(boundary["Type"], dimension, bitstring, boundary.get("ControlClass",""), boundary.get("NQubits",""))
+
+            
+            else:
+                # if boundary is fully defined by the user
+                boundary_string = boundary_string +' --b {}-{}-{}-{}-{}'.format(boundary["Type"],boundary["Dim"],boundary["Bitstring"],boundary.get("ControlClass",""),boundary.get("NQubits",""))
+
+        return boundary_string
+        
+    def _write_experiment_string(self, n_steps, use_GPU = False, IBM_device_name = None):
+        python_call = ""
+
+        driver_path = '/rds/general/user/db3115/home/DiffusionProject/JobManager/Driver.py'
+        python_call = python_call + 'python3 {} --nd {} --nq {} --ns {}'.format(driver_path,self.n_dims,self.n_dimensional_qubits,n_steps)
+    
+        python_call = python_call + self._write_boundary_string()
+        
+        if self.experiment_params.get("InitialState"):
+            python_call = python_call +' --in {}'.format(self.experiment_params.get("InitialState"))
+        if self.experiment_params.get("Coin"):
+            python_call = python_call + ' --c {}'.format(self.experiment_params.get("Coin"))
+        if use_GPU:
+            python_call = python_call + ' --GPU 1'
+        if self.experiment_params.get("Shots"):
+            python_call = python_call + ' --s {}'.format(self.experiment_params.get("Shots"))
+        if IBM_device_name:
+            python_call = python_call + ' --IBMDeviceName {}'.format(IBM_device_name)
+
+        return python_call
+
+    def _write_experiment(self, file, n_steps, use_GPU = False):
+        file.write(self._write_experiment_string(n_steps, use_GPU))
         file.write("\n")
         self._write_file_transfer(file)
 
@@ -113,7 +162,7 @@ class Config:
     def _generate_batch_steps(self) -> list:
         """Divides up the experiments into batches"""
         batches = []
-        batch_params = self.__experiment_params["BatchParams"]
+        batch_params = self.experiment_params["BatchParams"]
         stepsize = batch_params["StepSize"]
         start = batch_params["StartIterations"]
         batchsize = self.__job_params.get("BatchSize",5)
@@ -133,8 +182,8 @@ class Config:
 
     def _generate_job_files(self):
         """generates the `.pbs` job files required to tun experiments"""
-        if self.__experiment_params.get("Type","Single") == "Single":
-            self._generate_job_file([self.__experiment_params["NSteps"]])
+        if self.experiment_params.get("Type","Single") == "Single":
+            self._generate_job_file([self.experiment_params["NSteps"]])
         else:
             batches = self._generate_batch_steps()
             for batch in batches:
@@ -182,13 +231,60 @@ class Config:
         if verbose:
             subprocess.run("qstat -w -T", shell = True)
 
+
     def _remove_job_files(self):
         subprocess.run("rm -r jobs", shell=True)
 
-    def run(self):
+
+    def _run_on_PBS(self):
         self._build_job_filetree()
         self._build_save_directory()
         self._generate_job_files()
         self._submit_job_files()
         if not self.__config.get("KeepJobFiles", False):
             self._remove_job_files()
+
+    def generate_initial_states(self):
+        if self.experiment_params.get("InitialState","auto") == "auto":
+            middle_bitstring = "0"+"1"*(self.n_dimensional_qubits-1)
+            return [middle_bitstring]*self.n_dims
+    
+        else:
+            return self.experiment_params.get("InitialState").split()
+
+    def _gen_experiment_from_config(self):
+        """run a single experiment on IBM devices"""
+        assert self.experiment_params.get("Type","Single") == "Single", "Currently only supports single jobs for pushing to IBM devices"
+        device_name = self.__job_params.get('IBMDeviceName')
+        BACKEND = Backend(use_GPU=False, IBMQ_device_name=device_name)
+        walk_class = walk_type_dict.get(self.n_dims)
+        initial_states = self.generate_initial_states()
+        boundary_controls = self.generate_boundary_controls()
+        if self.n_dims == 1:
+            # unpack for 1D walk
+            initial_states = initial_states[0]
+        walk = walk_class(BACKEND,system_dimensions=self.n_dimensional_qubits, initial_states=initial_states, coin_class=self.experiment_params.get("Coin"), boundary_controls = boundary_controls)
+        experiment = SingleExperiment(walk,self.n_dims,self.n_dimensional_qubits,self.experiment_params.get("Shots",1024),self.experiment_params["NSteps"])
+        return experiment
+
+    def _run_on_IBM(self):
+        experiment = self._gen_experiment_from_config()
+        experiment.submit_job_to_IBM()
+
+    def process_IBM_results(self):
+        experiment = self._gen_experiment_from_config()
+        experiment.process_IBM_results()
+
+
+        
+
+        
+
+
+    def run(self):
+        if self.__job_params.get('IBMDeviceName'):
+            self._run_on_IBM()
+        else:
+            self._run_on_PBS()
+
+        
