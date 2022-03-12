@@ -145,7 +145,7 @@ class debugExperiment(Experiment):
 
 class SingleExperiment(Experiment):
 
-    def __init__(self, walk : QuantumWalk, n_dims, n_qubits, shots, n_steps, experiment_name=None, directory_path = "") -> None:
+    def __init__(self, walk : QuantumWalk, n_dims, n_qubits, shots, n_steps, experiment_name=None, directory_path = ".") -> None:
         self.walk = walk
         self.n_steps = n_steps
         self.n_dims = n_dims
