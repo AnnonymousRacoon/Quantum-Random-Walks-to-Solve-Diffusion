@@ -367,7 +367,7 @@ class QuantumWalk:
     def get_covariance_tensor(self,force_rerun = False):
         """returns the covariance tensor of the quantum walk"""
         if self.results is None or force_rerun:
-            job = self._run_job()
+            job = self.run_job_locally()
             self.get_results(job)
 
         dimension_displacements = {}
