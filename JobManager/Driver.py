@@ -1,16 +1,17 @@
 from DiffusionProject.Algorithms.Coins import HadamardCoin
-from DiffusionProject.Algorithms.Walks import Backend
+from DiffusionProject.Backends.backend import Backend
 from DiffusionProject.Algorithms.Boundaries import Boundary, OneWayBoundaryControl, BoundaryControl
 from DiffusionProject.Evaluation.Experiments import Experiment, SingleExperiment
 from DiffusionProject.JobManager.experimentParser import ExperimentParser
-from DiffusionProject.Utils.configCodes import coin_class_dict, walk_type_dict
+from DiffusionProject.Utils.configCodes import coin_class_dict, walk_type_dict, backend_dict
 from math import pi
 
 
 parser = ExperimentParser()
 args = parser.parse_args()
 
-BACKEND = Backend(use_GPU=args.get("GPU"), IBMQ_device_name=args.get("IBMDeviceName"))
+backend = backend_dict.get(args.get("backend"))
+BACKEND = Backend(use_GPU=args.get("GPU"), IBMQ_device_name=args.get("IBMDeviceName"),backend=backend)
 
 def generate_boundary_control_code_dict():
     boundaries = {}

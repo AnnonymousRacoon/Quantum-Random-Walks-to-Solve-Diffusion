@@ -1,5 +1,6 @@
 from DiffusionProject.Algorithms.Coins import HadamardCoin, GroverCoin, CylicController, PhaseKickbackCoin, RightKickBackCoin, LeftKickBackCoin, RightMinusKickBackCoin, RightPlusKickBackCoin, LeftMinusKickBackCoin, LeftPlusKickBackCoin
 from DiffusionProject.Algorithms.Walks import QuantumWalk1D, QuantumWalk2D, QuantumWalk3D
+from qiskit.test.mock import FakeToronto
 
 walk_type_dict = {
     1: QuantumWalk1D,
@@ -24,4 +25,9 @@ coin_class_dict = {
     "LPK": LeftPlusKickBackCoin,
     "LMK": LeftMinusKickBackCoin,
     "Cyclic_controller": CylicController
+}
+
+backend_dict = {
+    "FakeToronto": FakeToronto
+
 }

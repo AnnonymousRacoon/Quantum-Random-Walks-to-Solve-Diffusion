@@ -4,9 +4,9 @@ import subprocess
 from datetime import datetime
 from DiffusionProject.Utils.boundary_generator import BoundaryGenerator
 from DiffusionProject.Algorithms.Boundaries import Boundary, BoundaryControl
-from DiffusionProject.Algorithms.Walks import Backend
+from DiffusionProject.Backends.backend import Backend
 from DiffusionProject.Evaluation.Experiments import  SingleExperiment
-from DiffusionProject.Utils.configCodes import walk_type_dict
+from DiffusionProject.Utils.configCodes import walk_type_dict, backend_dict
 
 
 class Config:
@@ -120,12 +120,12 @@ class Config:
                 # apply all bitstrings to all dimensions specified
                 for dimension in dims:
                     for bitstring in bitstrings:
-                       boundary_string = boundary_string + ' --b {}-{}-{}-{}-{}'.format(boundary["Type"], dimension, bitstring, boundary.get("ControlClass",""), boundary.get("NQubits",""))
+                       boundary_string = boundary_string + ' --bo {}-{}-{}-{}-{}'.format(boundary["Type"], dimension, bitstring, boundary.get("ControlClass",""), boundary.get("NQubits",""))
 
             
             else:
                 # if boundary is fully defined by the user
-                boundary_string = boundary_string +' --b {}-{}-{}-{}-{}'.format(boundary["Type"],boundary["Dim"],boundary["Bitstring"],boundary.get("ControlClass",""),boundary.get("NQubits",""))
+                boundary_string = boundary_string +' --bo {}-{}-{}-{}-{}'.format(boundary["Type"],boundary["Dim"],boundary["Bitstring"],boundary.get("ControlClass",""),boundary.get("NQubits",""))
 
         return boundary_string
         
@@ -149,6 +149,8 @@ class Config:
             python_call = python_call + ' --s {}'.format(self.experiment_params.get("Shots"))
         if IBM_device_name:
             python_call = python_call + ' --IBMDeviceName {}'.format(IBM_device_name)
+        if self.__job_params.get("Backend"):
+            python_call = python_call + ' --backend {}'.format(self.__job_params.get("Backend"))
 
         return python_call
 
@@ -258,7 +260,9 @@ class Config:
         """run a single experiment on IBM devices"""
         assert self.experiment_params.get("Type","Single") == "Single", "Currently only supports single jobs for pushing to IBM devices"
         device_name = self.__job_params.get('IBMDeviceName')
-        BACKEND = Backend(use_GPU=False, IBMQ_device_name=device_name)
+
+        backend = backend_dict.get(self.__job_params.get("Backend"))
+        BACKEND = Backend(use_GPU=False, IBMQ_device_name=device_name, )
         walk_class = walk_type_dict.get(self.n_dims)
         initial_states = self.generate_initial_states()
         boundary_controls = self.generate_boundary_controls()
