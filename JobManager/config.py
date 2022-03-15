@@ -140,7 +140,9 @@ class Config:
         if self.experiment_params.get("InitialState"):
             python_call = python_call +' --in {}'.format(self.experiment_params.get("InitialState"))
         if self.experiment_params.get("Coin"):
-            python_call = python_call + ' --c {}'.format(self.experiment_params.get("Coin"))
+            python_call = python_call + ' --coin {}'.format(self.experiment_params.get("Coin"))
+        if self.experiment_params.get("CoinKwargs"):
+            python_call = python_call + ' --coin_kwargs {}'.format(self.experiment_params.get("CoinKwargs"))
         if use_GPU:
             python_call = python_call + ' --GPU 1'
         if self.experiment_params.get("Shots"):

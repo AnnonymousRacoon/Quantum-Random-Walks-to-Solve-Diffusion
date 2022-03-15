@@ -1,4 +1,4 @@
-from DiffusionProject.Algorithms.Coins import HadamardCoin, GroverCoin, CylicController, RightKickBackCoin, LeftKickBackCoin, RightMinusKickBackCoin, RightPlusKickBackCoin, LeftMinusKickBackCoin, LeftPlusKickBackCoin
+from DiffusionProject.Algorithms.Coins import HadamardCoin, GroverCoin, CylicController, PhaseKickbackCoin, RightKickBackCoin, LeftKickBackCoin, RightMinusKickBackCoin, RightPlusKickBackCoin, LeftMinusKickBackCoin, LeftPlusKickBackCoin
 from DiffusionProject.Algorithms.Walks import QuantumWalk1D, QuantumWalk2D, QuantumWalk3D
 
 walk_type_dict = {
@@ -13,6 +13,8 @@ coin_class_dict = {
     "H": HadamardCoin,
     "Grover": GroverCoin,
     "G": GroverCoin,
+    "PhaseKickback":PhaseKickbackCoin,
+    "PK":PhaseKickbackCoin,
     "RK": RightKickBackCoin,
     "RightKickback": RightKickBackCoin,
     "LK": LeftKickBackCoin,

@@ -8,6 +8,7 @@ class ExperimentParser:
         self.__parser.add_argument('--boundary', action='append')
         self.__parser.add_argument('--initital_states', action='store', type=str)
         self.__parser.add_argument('--coin', action='store', type=str)
+        self.__parser.add_argument('--coin_kwargs', action='store', type=str)
         self.__parser.add_argument('--nsteps', action='store', type=int, default = 10)
         self.__parser.add_argument('--shots', action='store', type=int, default = 2048)
         self.__parser.add_argument('--GPU', action='store_true', default = False)

@@ -4,6 +4,7 @@ from DiffusionProject.Algorithms.Boundaries import Boundary, OneWayBoundaryContr
 from DiffusionProject.Evaluation.Experiments import Experiment, SingleExperiment
 from DiffusionProject.JobManager.experimentParser import ExperimentParser
 from DiffusionProject.Utils.configCodes import coin_class_dict, walk_type_dict
+from math import pi
 
 
 parser = ExperimentParser()
@@ -65,6 +66,20 @@ def generate_boundary_controls():
 
     return boundary_controls
 
+def generate_coin_kwargs():
+    
+    kwargs_str = args.get("coin_kwargs")
+    if kwargs_str is None:
+        return {}
+
+    kwargs_dict = {}
+    kwargs_list = kwargs_str.split(" ")
+    for keyword_arg in kwargs_list:
+        param,value = keyword_arg.split('=')
+        kwargs_dict[param] = eval(value)
+
+    return kwargs_dict
+
 
 
 
@@ -80,6 +95,7 @@ else:
 
 kwargs["boundary_controls"] = generate_boundary_controls()
 kwargs["coin_class"] = coin_class_dict.get(args.get("coin"), HadamardCoin)
+kwargs["coin_kwargs"] = generate_coin_kwargs()
 kwargs["backend"] = BACKEND
 
 walk_class = walk_type_dict.get(args["ndims"])

@@ -148,7 +148,7 @@ class RightPlusKickBackCoin(PhaseKickbackCoin):
         A Quantum coin similiar to a Grover coin which performs kickback with phase pi/4
         """
         super().__init__(n_qubits, pi/4.0)
-        self._name = "Right Kickback Coin"
+        self._name = "Right Plus Kickback Coin"
 
 class RightMinusKickBackCoin(PhaseKickbackCoin):
     """
@@ -159,7 +159,7 @@ class RightMinusKickBackCoin(PhaseKickbackCoin):
         A Quantum coin similiar to a Grover coin which performs kickback with phase 3pi/4
         """
         super().__init__(n_qubits, 3*pi/4.0)
-        self._name = "Right Kickback Coin"
+        self._name = "Right Minus Kickback Coin"
 
 
 class LeftKickBackCoin(PhaseKickbackCoin):
@@ -182,7 +182,7 @@ class LeftMinusKickBackCoin(PhaseKickbackCoin):
         A Quantum coin similiar to a Grover coin which performs kickback with phase 5pi/4
         """
         super().__init__(n_qubits, 5*pi/4.0)
-        self._name = "Left Kickback Coin"
+        self._name = "Left Minus Kickback Coin"
 
 class LeftPlusKickBackCoin(PhaseKickbackCoin):
     """
@@ -193,7 +193,7 @@ class LeftPlusKickBackCoin(PhaseKickbackCoin):
         A Quantum coin similiar to a Grover coin which performs kickback with phase 7pi/4
         """
         super().__init__(n_qubits, 7*pi/4.0)
-        self._name = "Left Kickback Coin"
+        self._name = "Left Plus Kickback Coin"
 
         
 

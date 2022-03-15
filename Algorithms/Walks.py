@@ -50,7 +50,7 @@ class Backend:
         
 class QuantumWalk:
 
-    def __init__(self,backend: Backend ,system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class = None, boundary_controls = [] ) -> None:
+    def __init__(self,backend: Backend ,system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class = None, coin_kwargs = {}, boundary_controls = [] ) -> None:
         """
         Create a new `QuantumWalk` Object
         Args:
@@ -87,7 +87,7 @@ class QuantumWalk:
         if coin_class == None:
             coin_class = HadamardCoin
         self.n_shift_coin_bits = n_shift_coin_bits if n_shift_coin_bits is not None else math.ceil(math.log2(2*len(system_dimensions)))
-        self.shift_coin = coin_class(self.n_shift_coin_bits)
+        self.shift_coin = coin_class(self.n_shift_coin_bits,**coin_kwargs)
 
         # initialise Quantum Registers
         self.shift_coin_register = QuantumRegister( self.n_shift_coin_bits,"coin")
@@ -386,9 +386,9 @@ class QuantumWalk:
         
 
 class QuantumWalk3D(QuantumWalk):
-    def __init__(self,backend: Backend, system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class=None, boundary_controls = []) -> None:
+    def __init__(self,backend: Backend, system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class=None, coin_kwargs = None, boundary_controls = []) -> None:
         assert len(system_dimensions) == 3
-        super().__init__(backend,system_dimensions, initial_states, n_shift_coin_bits, coin_class, boundary_controls)
+        super().__init__(backend,system_dimensions, initial_states, n_shift_coin_bits, coin_class, coin_kwargs, boundary_controls)
 
     def step(self) -> None:
         self.add_coins()
@@ -406,9 +406,9 @@ class QuantumWalk3D(QuantumWalk):
         self.reset_boundaries()
 
 class QuantumWalk2D(QuantumWalk):
-    def __init__(self,backend: Backend, system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class=None, boundary_controls = []) -> None:
+    def __init__(self,backend: Backend, system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class=None, coin_kwargs = None, boundary_controls = []) -> None:
         assert len(system_dimensions) == 2
-        super().__init__(backend,system_dimensions, initial_states, n_shift_coin_bits, coin_class, boundary_controls)
+        super().__init__(backend,system_dimensions, initial_states, n_shift_coin_bits, coin_class, coin_kwargs, boundary_controls)
 
     def step(self) -> None:
         self.add_coins()
@@ -424,11 +424,11 @@ class QuantumWalk2D(QuantumWalk):
 
 
 class QuantumWalk1D(QuantumWalk):
-    def __init__(self,backend: Backend, system_dimensions: int, initial_states: str = None, n_shift_coin_bits: int = None, coin_class=None, boundary_controls = []) -> None:
+    def __init__(self,backend: Backend, system_dimensions: int, initial_states: str = None, n_shift_coin_bits: int = None, coin_class=None ,coin_kwargs = None, boundary_controls = []) -> None:
         assert type(system_dimensions) == int
         if initial_states is not None:
             initial_states = [initial_states]
-        super().__init__(backend,[system_dimensions], initial_states, n_shift_coin_bits, coin_class, boundary_controls)
+        super().__init__(backend,[system_dimensions], initial_states, n_shift_coin_bits, coin_class, coin_kwargs, boundary_controls)
 
 
     def step(self) -> None:
