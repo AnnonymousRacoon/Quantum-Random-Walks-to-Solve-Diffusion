@@ -1,53 +1,14 @@
 
 import math
-from qiskit import Aer, QuantumCircuit, QuantumRegister, transpile, assemble
+from qiskit import QuantumCircuit, QuantumRegister, transpile, assemble
 from qiskit.tools.visualization import circuit_drawer
-from qiskit.providers.aer import AerError
-from qiskit import IBMQ
 import pandas as pd
 from DiffusionProject.Algorithms.Coins import HadamardCoin, CylicController
 from DiffusionProject.Algorithms.Boundaries import Boundary, OneWayBoundaryControl, BoundaryControl
 
-class Backend:
-    """wrapper for Qiskit backend """
-    def __init__(self,use_GPU = False, IBMQ_device_name = None) -> None:
+from DiffusionProject.Backends.backend import Backend
 
-        if IBMQ_device_name:
-          
-            IBMQ.load_account()
-            self.__provider  = IBMQ.get_provider(hub='ibm-q')
-            self.__backend = self.__provider.get_backend(IBMQ_device_name)
-            self.__device = IBMQ_device_name
-            self.__is_on_IBM = True
-        
-
-        else:
-            self.__backend = Aer.get_backend('aer_simulator')
-            self.__device = "CPU" 
-            self.__is_on_IBM = False
-            # init GPU backend
-            if use_GPU:
-                try:
-                    self.__backend.set_options(device='GPU')
-                    self.__device = "GPU"
-                except AerError as e:
-                    print(e)
-
-        print("running on device: {}".format(self.__device))
-
-    @property
-    def backend(self):
-        return self.__backend
-
-    @property
-    def device(self):
-        return self.__device
-
-    @property
-    def is_on_IBM(self):
-        return self.__is_on_IBM
-
-        
+    
 class QuantumWalk:
 
     def __init__(self,backend: Backend ,system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class = None, coin_kwargs = {}, boundary_controls = [] ) -> None:
@@ -386,7 +347,7 @@ class QuantumWalk:
         
 
 class QuantumWalk3D(QuantumWalk):
-    def __init__(self,backend: Backend, system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class=None, coin_kwargs = None, boundary_controls = []) -> None:
+    def __init__(self,backend: Backend, system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class=None, coin_kwargs = {}, boundary_controls = []) -> None:
         assert len(system_dimensions) == 3
         super().__init__(backend,system_dimensions, initial_states, n_shift_coin_bits, coin_class, coin_kwargs, boundary_controls)
 
@@ -406,7 +367,7 @@ class QuantumWalk3D(QuantumWalk):
         self.reset_boundaries()
 
 class QuantumWalk2D(QuantumWalk):
-    def __init__(self,backend: Backend, system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class=None, coin_kwargs = None, boundary_controls = []) -> None:
+    def __init__(self,backend: Backend, system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class=None, coin_kwargs = {}, boundary_controls = []) -> None:
         assert len(system_dimensions) == 2
         super().__init__(backend,system_dimensions, initial_states, n_shift_coin_bits, coin_class, coin_kwargs, boundary_controls)
 
@@ -424,7 +385,7 @@ class QuantumWalk2D(QuantumWalk):
 
 
 class QuantumWalk1D(QuantumWalk):
-    def __init__(self,backend: Backend, system_dimensions: int, initial_states: str = None, n_shift_coin_bits: int = None, coin_class=None ,coin_kwargs = None, boundary_controls = []) -> None:
+    def __init__(self,backend: Backend, system_dimensions: int, initial_states: str = None, n_shift_coin_bits: int = None, coin_class=None ,coin_kwargs = {}, boundary_controls = []) -> None:
         assert type(system_dimensions) == int
         if initial_states is not None:
             initial_states = [initial_states]
