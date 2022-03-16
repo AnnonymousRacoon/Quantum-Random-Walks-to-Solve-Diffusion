@@ -262,7 +262,7 @@ class Config:
         device_name = self.__job_params.get('IBMDeviceName')
 
         backend = backend_dict.get(self.__job_params.get("Backend"))
-        BACKEND = Backend(use_GPU=False, IBMQ_device_name=device_name, )
+        BACKEND = Backend(use_GPU=False, IBMQ_device_name=device_name,backend=backend )
         walk_class = walk_type_dict.get(self.n_dims)
         initial_states = self.generate_initial_states()
         boundary_controls = self.generate_boundary_controls()

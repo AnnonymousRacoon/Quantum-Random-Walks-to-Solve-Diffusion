@@ -7,7 +7,7 @@ class ExperimentParser:
         self.__parser.add_argument('--nqubits', action='store', type=int, required=True)
         self.__parser.add_argument('--boundary', action='append')
         self.__parser.add_argument('--initital_states', action='store', type=str)
-        self.__parser.add_argument('--coin', action='store', type=str)
+        self.__parser.add_argument('--backend', action='store', type=str)
         self.__parser.add_argument('--coin', action='store', type=str)
         self.__parser.add_argument('--coin_kwargs', action='store', type=str)
         self.__parser.add_argument('--nsteps', action='store', type=int, default = 10)
