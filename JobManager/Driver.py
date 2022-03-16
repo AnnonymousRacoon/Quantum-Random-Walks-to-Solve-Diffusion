@@ -10,7 +10,7 @@ from math import pi
 parser = ExperimentParser()
 args = parser.parse_args()
 
-backend = backend_dict.get(args.get("backend"))
+backend = backend_dict.get(args.get("backend"))()
 BACKEND = Backend(use_GPU=args.get("GPU"), IBMQ_device_name=args.get("IBMDeviceName"),backend=backend)
 
 def generate_boundary_control_code_dict():
