@@ -1,5 +1,6 @@
 from DiffusionProject.Algorithms.Coins import HadamardCoin
-from DiffusionProject.Algorithms.Walks import Backend,QuantumWalk, QuantumWalk1D, QuantumWalk2D, QuantumWalk3D
+from DiffusionProject.Algorithms.Walks import QuantumWalk, QuantumWalk1D, QuantumWalk2D, QuantumWalk3D
+from DiffusionProject.Backends.backend import Backend
 from DiffusionProject.Algorithms.Boundaries import BoundaryControl, Boundary
 from DiffusionProject.Evaluation.Plotter import plot_distribution2D, plot_distribution3D
 from DiffusionProject.Utils.timer import Timer
