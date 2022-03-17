@@ -133,5 +133,5 @@ dmypy.json
 *.yml
 
 # ignore playground
-*Playground*
+*Playground.pynb
 *Playground*
