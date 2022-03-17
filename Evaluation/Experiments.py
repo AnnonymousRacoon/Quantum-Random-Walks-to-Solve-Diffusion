@@ -2,7 +2,7 @@ from DiffusionProject.Algorithms.Coins import HadamardCoin
 from DiffusionProject.Algorithms.Walks import QuantumWalk, QuantumWalk1D, QuantumWalk2D, QuantumWalk3D
 from DiffusionProject.Backends.backend import Backend
 from DiffusionProject.Algorithms.Boundaries import BoundaryControl, Boundary
-from DiffusionProject.Evaluation.Plotter import plot_distribution2D, plot_distribution3D
+from DiffusionProject.Evaluation.Plotter import plot_distribution2D, plot_distribution3D, plot_distribution1D
 from DiffusionProject.Utils.timer import Timer
 import pandas as pd
 import subprocess
@@ -146,7 +146,7 @@ class debugExperiment(Experiment):
 
 class SingleExperiment(Experiment):
 
-    def __init__(self, walk : QuantumWalk, n_dims, n_qubits, shots, n_steps, experiment_name=None, directory_path = ".") -> None:
+    def __init__(self, walk : QuantumWalk, n_dims, n_qubits, shots, n_steps,decoherence_intervals = None, experiment_name=None, directory_path = ".") -> None:
         self.walk = walk
         self.n_steps = n_steps
         self.n_dims = n_dims
@@ -155,6 +155,7 @@ class SingleExperiment(Experiment):
         self.directory_path = directory_path
         self.job_id_path = self.directory_path +'/' + "IBM_job_list.txt"
         self._set_path(experiment_name)
+        self.decoherence_intervals = decoherence_intervals
 
     def _set_path(self,experiment_name: None):
         # name experiment
@@ -165,6 +166,9 @@ class SingleExperiment(Experiment):
             self.path = self.directory_path +'/' + experiment_name
 
     def _plot_distribution(self, results, plot_path):
+        if self.n_dims == 1:
+            title = "diffusion on an {0} digit line with a {1}".format(2**self.n_qubits, self.walk.shift_coin._name)
+            plot_distribution1D(results=results,n_qubits=self.n_qubits,savepath=plot_path,title=title)
         if self.n_dims == 2:
             title = "diffusion on an {0}x{0} grid with a {1}".format(2**self.n_qubits, self.walk.shift_coin._name)
             plot_distribution2D(results=results,n_qubits=self.n_qubits,savepath=plot_path,title=title)
@@ -176,10 +180,16 @@ class SingleExperiment(Experiment):
         """Run a quantum walk experiment on local hardware"""
         timer = Timer()
         timer.start()
-        job = self.walk.run_experiment(n_steps=self.n_steps, shots=self.shots)
+
+        if self.decoherence_intervals:
+            results,qiskit_time = self.walk.run_decoherence_experiment(n_steps=self.n_steps, decoherence_intervals = self.decoherence_intervals, shots=self.shots,return_elapsed_time=True)
+        else:
+            job = self.walk.run_experiment(n_steps=self.n_steps, shots=self.shots)
+            results, qiskit_time = self.walk.get_results(job,True)
+
         python_elapsed_time = Timer.seconds_to_hms(timer.stop())
         print(python_elapsed_time)
-        results, qiskit_time = self.walk.get_results(job,True)
+        
         self._process_results(results,qiskit_time)
 
     def submit_job_to_IBM(self):
@@ -254,4 +264,3 @@ class SingleExperiment(Experiment):
     def process_IBM_results(self):
         self._build_filetree()
         self._process_completed_IBM_job()
-        

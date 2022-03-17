@@ -60,18 +60,18 @@ class QuantumWalk:
 
         # initialise state
         self.initial_states = initial_states
-        self.initialise_states()
+        self.initialise_states(self.initial_states)
 
         #store results
         self.results = None
 
-    def initialise_states(self) -> None:
+    def initialise_states(self, initial_states = None) -> None:
         """initialises the quantum circuit to the values defines in `self.initial_states`"""
-        if self.initial_states is not None:
-            assert len(self.initial_states) == len(self.system_dimensions)
+        if initial_states is not None:
+            assert len(initial_states) == len(self.system_dimensions)
 
             for idx, n_qubits in enumerate(self.system_dimensions):
-                initial_state = self.initial_states[idx]
+                initial_state = initial_states[idx]
                 assert len(initial_state) == n_qubits
                 for bit_idx, bit in enumerate(initial_state[::-1]):
                     if bit != '0':
@@ -234,16 +234,9 @@ class QuantumWalk:
         assert job.done(), "Job in position {} in the queue, try again later".format(queue_position)
         return self.get_results(job, return_elapsed_time)
 
-    def get_results(self,job, return_elapsed_time = False) -> dict:
-        """processes results from a Qiskit job"""
+    def process_counts(self,counts,shots):
+        """Processes raw count data from qiskit into data relating to physical space"""
         state_register_indices, _ = self.get_state_register_indices()
-
-        results = job.result()
-        counts = results.get_counts()
-        counts = self.discard_non_state_bits(counts, False)
-        shots = results.results[0].shots
-
-
         displacement_tensors = {}
         for idx in range(self.n_system_dimensions):
             displacement_tensors["dimension_{}".format(idx)] = []
@@ -258,12 +251,22 @@ class QuantumWalk:
 
 
         self.results = displacement_tensors
+        return displacement_tensors
+
+    def get_results(self,job, return_elapsed_time = False) -> dict:
+        """processes results from a Qiskit job"""
+
+        results = job.result()
+        counts = results.get_counts()
+        counts = self.discard_non_state_bits(counts, False)
+        shots = results.results[0].shots
+        displacement_tensors = self.process_counts(counts=counts, shots=shots)
         return (displacement_tensors, results.time_taken) if return_elapsed_time else displacement_tensors
 
-    def run_experiment(self,n_steps,shots = 1024):
+    def run_experiment(self,n_steps,shots = 1024, initial_states = None):
         """runs a quantum walk of `n_steps` """
         # reset_circuit
-        self.reset_circuit()
+        self.reset_circuit(initial_states)
 
         # add n_steps
         self.add_n_steps(n_steps=n_steps)
@@ -273,6 +276,65 @@ class QuantumWalk:
             return self._submit_job_on_IBM(shots)
 
         return self.run_job_locally(shots)
+
+    @staticmethod
+    def merge_counts(total_counts, counts_appendage):
+        """Merge two count dictionaries"""
+ 
+        for bitstring, n_shots in counts_appendage.items():
+            if total_counts.get(bitstring) is None:
+                total_counts[bitstring] = 0
+            total_counts[bitstring]+=n_shots
+
+    def run_decoherence_experiment(self,n_steps: int,decoherence_intervals: int, shots=1024,initial_states = None, return_elapsed_time=False):
+        """Runs a decoherence experiment"""
+        state_register_indices, _ = self.get_state_register_indices()
+
+        n_full_cycles = n_steps//decoherence_intervals
+        remainder_steps = n_steps%decoherence_intervals
+
+        # initialise counts to n_shots at initial position
+        counts = self.run_experiment(n_steps=0,shots=shots,initial_states=initial_states).result().get_counts()
+        counts = self.discard_non_state_bits(counts, False)
+
+        total_time = 0
+        # full cycles
+        for cycle in range(n_full_cycles):
+            total_counts = {}
+            print(f"decohenerence cycle {cycle+1}")
+            for bitstring, n_shots in counts.items():
+                initial_states = []
+                for dimension_params in state_register_indices:
+                        initial_states.append(bitstring[dimension_params['start_idx']:1+dimension_params['end_idx']])
+                job = self.run_experiment(n_steps = decoherence_intervals, shots=n_shots, initial_states=initial_states)
+                results = job.result()
+                counts_appendage = results.get_counts()
+                counts_appendage = self.discard_non_state_bits(counts_appendage, False)
+                self.merge_counts(total_counts=total_counts,counts_appendage=counts_appendage)
+                total_time+=results.time_taken
+
+            counts = total_counts
+
+
+        # remainder cyle
+        if remainder_steps:
+            print(f"decohenerence cycle {n_full_cycles+1}")
+            total_counts = {}
+            for bitstring, n_shots in counts.items():
+                initial_states = []
+                for dimension_params in state_register_indices:
+                        initial_states.append(bitstring[dimension_params['start_idx']:1+dimension_params['end_idx']])
+                job = self.run_experiment(n_steps = remainder_steps, shots=n_shots, initial_states=initial_states)
+                results = job.result()
+                counts_appendage = results.get_counts()
+                counts_appendage = self.discard_non_state_bits(counts_appendage, False)
+                self.merge_counts(total_counts=total_counts,counts_appendage=counts_appendage)
+                total_time+=results.time_taken
+
+            counts = total_counts
+
+        displacement_tensors = self.process_counts(counts=counts, shots=shots)
+        return (displacement_tensors, total_time) if return_elapsed_time else displacement_tensors
 
     def run_job_locally(self, shots = 1024):
         """Runs a simulation of the quantum circuit for the number of shits specified by `shots`"""
@@ -316,10 +378,12 @@ class QuantumWalk:
         self.reset_circuit()
       
 
-    def reset_circuit(self):
+    def reset_circuit(self, initial_states = None):
         """clears the circuit and initialises to its initial states"""
+        if initial_states is None:
+            initial_states = self.initial_states
         self.build_ciruit()
-        self.initialise_states()
+        self.initialise_states(initial_states)
         
 
 
@@ -386,10 +450,11 @@ class QuantumWalk2D(QuantumWalk):
 
 class QuantumWalk1D(QuantumWalk):
     def __init__(self,backend: Backend, system_dimensions: int, initial_states: str = None, n_shift_coin_bits: int = None, coin_class=None ,coin_kwargs = {}, boundary_controls = []) -> None:
-        assert type(system_dimensions) == int
-        if initial_states is not None:
+        if type(system_dimensions) == int:
+            system_dimensions = [system_dimensions]
+        if initial_states is not None and type(initial_states) == str:
             initial_states = [initial_states]
-        super().__init__(backend,[system_dimensions], initial_states, n_shift_coin_bits, coin_class, coin_kwargs, boundary_controls)
+        super().__init__(backend,system_dimensions, initial_states, n_shift_coin_bits, coin_class, coin_kwargs, boundary_controls)
 
 
     def step(self) -> None:

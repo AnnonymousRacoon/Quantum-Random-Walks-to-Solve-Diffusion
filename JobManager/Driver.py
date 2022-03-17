@@ -97,6 +97,7 @@ else:
 kwargs["boundary_controls"] = generate_boundary_controls()
 kwargs["coin_class"] = coin_class_dict.get(args.get("coin"), HadamardCoin)
 kwargs["coin_kwargs"] = generate_coin_kwargs()
+kwargs["decoherence_intervals"] = args.get("decoherence_intervals")
 kwargs["backend"] = BACKEND
 
 walk_class = walk_type_dict.get(args["ndims"])

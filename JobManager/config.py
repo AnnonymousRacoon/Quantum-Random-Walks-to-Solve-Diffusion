@@ -6,7 +6,7 @@ from DiffusionProject.Utils.boundary_generator import BoundaryGenerator
 from DiffusionProject.Algorithms.Boundaries import Boundary, BoundaryControl
 from DiffusionProject.Backends.backend import Backend
 from DiffusionProject.Evaluation.Experiments import  SingleExperiment
-from DiffusionProject.Utils.configCodes import walk_type_dict, backend_dict
+from DiffusionProject.Utils.configCodes import walk_type_dict, backend_dict,coin_class_dict
 
 
 class Config:
@@ -20,6 +20,7 @@ class Config:
         self.job_files = []
         self.__savepath = None
         self.path = path
+        self.output_dir = self.__config.get("OutputPath","$WORK/Results")
 
     @property
     def savepath(self):
@@ -28,7 +29,7 @@ class Config:
         if self.__savepath == None:
             now = datetime.now()
             dt_string = now.strftime("-%d-%m-%Y-%H-%M-%S")
-            self.__savepath = "$WORK/Results/" + self.__config.get("Name","Experiment") + dt_string
+            self.__savepath = self.output_dir + "/" + self.__config.get("Name","Experiment") + dt_string
         return self.__savepath
 
 
@@ -139,6 +140,8 @@ class Config:
         
         if self.experiment_params.get("InitialState"):
             python_call = python_call +' --in {}'.format(self.experiment_params.get("InitialState"))
+        if self.experiment_params.get("DecoherenceIntervals"):
+            python_call = python_call +' --decoherence_intervals {}'.format(self.experiment_params.get("DecoherenceIntervals"))
         if self.experiment_params.get("Coin"):
             python_call = python_call + ' --coin {}'.format(self.experiment_params.get("Coin"))
         if self.experiment_params.get("CoinKwargs"):
@@ -266,11 +269,9 @@ class Config:
         walk_class = walk_type_dict.get(self.n_dims)
         initial_states = self.generate_initial_states()
         boundary_controls = self.generate_boundary_controls()
-        if self.n_dims == 1:
-            # unpack for 1D walk
-            initial_states = initial_states[0]
-        walk = walk_class(BACKEND,system_dimensions=self.n_dimensional_qubits, initial_states=initial_states, coin_class=self.experiment_params.get("Coin"), boundary_controls = boundary_controls)
-        experiment = SingleExperiment(walk,self.n_dims,self.n_dimensional_qubits,self.experiment_params.get("Shots",1024),self.experiment_params["NSteps"])
+        coin_class = coin_class_dict.get(self.experiment_params.get("Coin"))
+        walk = walk_class(BACKEND,system_dimensions=self.n_dimensional_qubits, initial_states=initial_states, coin_class=coin_class, boundary_controls = boundary_controls)
+        experiment = SingleExperiment(walk,self.n_dims,self.n_dimensional_qubits,self.experiment_params.get("Shots",1024),self.experiment_params["NSteps"],decoherence_intervals=self.experiment_params.get("DecoherenceIntervals"),directory_path=self.__config.get("OutputPath"))
         return experiment
 
     def _run_on_IBM(self):

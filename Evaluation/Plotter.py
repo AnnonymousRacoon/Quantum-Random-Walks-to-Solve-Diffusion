@@ -5,6 +5,28 @@ import sys
 
 sns.set_style("whitegrid")
 
+def plot_distribution1D(results,n_qubits,savepath,title = None):
+    """plots diffusion for 1D data"""
+
+    x,probability_density = results["dimension_0"],results["probability_density"]
+    axes_limit = (2**n_qubits)-1
+    if title is None:
+        title = "diffusion on an {0} digit line".format(axes_limit+1)
+
+    coords = [(i,j) for i,j in zip(x,probability_density)]
+    coords.sort(key=lambda coord: coord[0])
+    x_sorted = [coord[0] for coord in coords]
+    probability_sorted = [coord[1] for coord in coords]
+
+    plt.cla()
+    plt.plot(x_sorted,probability_sorted,'o--')
+    plt.xlim(0,axes_limit)
+    plt.xlabel('X')
+    plt.ylabel('Probability Density')
+    plt.title(title)
+    plt.savefig(savepath,dpi = 300)
+    plt.cla()
+
 def plot_distribution2D(results,n_qubits,savepath,title = None):
     """plots diffusion for 2D data"""
 
