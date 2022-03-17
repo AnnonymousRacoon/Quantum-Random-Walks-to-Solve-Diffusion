@@ -131,3 +131,7 @@ dmypy.json
 # ignore generated png files,
 *.png
 *.yml
+
+# ignore playground
+*Playground*
+*Playground*
