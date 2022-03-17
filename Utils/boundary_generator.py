@@ -64,7 +64,7 @@ class BoundaryGenerator:
         assert len(boundaries) == len(boundary_control_codes), "There must be the same number of control codes as boundaries"
         control_code_dict = {}
         for boundary, control_code in zip(boundaries,boundary_control_codes):
-            if boundaries.get(control_code):
+            if control_code_dict.get(control_code):
                     control_code_dict[control_code].append(boundary)
             else:
                     control_code_dict[control_code] = [boundary]
@@ -74,7 +74,6 @@ class BoundaryGenerator:
             
 
             boundary_control_class = coin_class_dict.get(code.split("-")[0],HadamardCoin)
-            print(code)
             n_boundary_qubits = int(code.split("-")[1])
             if boundary_control_class:
                 boundary_control_coin = boundary_control_class(n_boundary_qubits)

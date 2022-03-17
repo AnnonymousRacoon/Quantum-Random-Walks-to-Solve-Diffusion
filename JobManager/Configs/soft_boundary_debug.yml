@@ -3,7 +3,7 @@ ExperimentParams:
   Type: Single
   NSteps: 2
   NDims: 2
-  NQubits: 4
+  NQubits: 5
   Coin: "Grover"
   InitialStates: "auto"
   Boundaries:
@@ -27,3 +27,4 @@ JobParams:
   BatchSize: 1
 
 KeepJobFiles: true
+DataPath: "."
