@@ -13,7 +13,7 @@ class Config:
     def __init__(self,path) -> None:
         self.__config = self.parse_config(path)
         self.experiment_params = self.__config.get("ExperimentParams")
-        self.__job_params = self.__config.get("JobParams")
+        self.__job_params = self.__config.get("JobParams", {})
         self.n_dims = self.experiment_params.get("NDims")
         self.n_dimensional_qubits = self.experiment_params.get("NQubits")
         self.boundaries = self.experiment_params.get("Boundaries")
@@ -259,7 +259,7 @@ class Config:
         else:
             return self.experiment_params.get("InitialState").split()
 
-    def _gen_experiment_from_config(self):
+    def gen_experiment_from_config(self):
         """run a single experiment on IBM devices"""
         assert self.experiment_params.get("Type","Single") == "Single", "Currently only supports single jobs for pushing to IBM devices"
         device_name = self.__job_params.get('IBMDeviceName')
@@ -270,16 +270,17 @@ class Config:
         initial_states = self.generate_initial_states()
         boundary_controls = self.generate_boundary_controls()
         coin_class = coin_class_dict.get(self.experiment_params.get("Coin"))
-        walk = walk_class(BACKEND,system_dimensions=self.n_dimensional_qubits, initial_states=initial_states, coin_class=coin_class, boundary_controls = boundary_controls)
+        system_dimensions = [self.n_dimensional_qubits]*self.n_dims
+        walk = walk_class(BACKEND,system_dimensions=system_dimensions, initial_states=initial_states, coin_class=coin_class, boundary_controls = boundary_controls)
         experiment = SingleExperiment(walk,self.n_dims,self.n_dimensional_qubits,self.experiment_params.get("Shots",1024),self.experiment_params["NSteps"],decoherence_intervals=self.experiment_params.get("DecoherenceIntervals"),directory_path=self.__config.get("OutputPath"))
         return experiment
 
     def _run_on_IBM(self):
-        experiment = self._gen_experiment_from_config()
+        experiment = self.gen_experiment_from_config()
         experiment.submit_job_to_IBM()
 
     def process_IBM_results(self):
-        experiment = self._gen_experiment_from_config()
+        experiment = self.gen_experiment_from_config()
         experiment.process_IBM_results()
 
 

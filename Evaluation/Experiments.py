@@ -1,3 +1,4 @@
+from turtle import clear
 from DiffusionProject.Algorithms.Coins import HadamardCoin
 from DiffusionProject.Algorithms.Walks import QuantumWalk, QuantumWalk1D, QuantumWalk2D, QuantumWalk3D
 from DiffusionProject.Backends.backend import Backend
@@ -6,6 +7,8 @@ from DiffusionProject.Evaluation.Plotter import plot_distribution2D, plot_distri
 from DiffusionProject.Utils.timer import Timer
 import pandas as pd
 import subprocess
+
+from sympy import false
 
 
 
@@ -165,18 +168,19 @@ class SingleExperiment(Experiment):
         else:
             self.path = self.directory_path +'/' + experiment_name
 
-    def _plot_distribution(self, results, plot_path):
+    def _plot_distribution(self, results, plot_path, show_fig = False):
+        clear_fig = not show_fig
         if self.n_dims == 1:
             title = "diffusion on an {0} digit line with a {1}".format(2**self.n_qubits, self.walk.shift_coin._name)
-            plot_distribution1D(results=results,n_qubits=self.n_qubits,savepath=plot_path,title=title)
+            plot_distribution1D(results=results,n_qubits=self.n_qubits,savepath=plot_path,title=title, clear_fig=clear_fig)
         if self.n_dims == 2:
             title = "diffusion on an {0}x{0} grid with a {1}".format(2**self.n_qubits, self.walk.shift_coin._name)
-            plot_distribution2D(results=results,n_qubits=self.n_qubits,savepath=plot_path,title=title)
+            plot_distribution2D(results=results,n_qubits=self.n_qubits,savepath=plot_path,title=title, clear_fig=clear_fig)
         elif self.n_dims == 3:
             title = "diffusion on an {0}x{0}*{0} grid with a {1}".format(2**self.n_qubits, self.walk.shift_coin._name)
-            plot_distribution3D(results=results,n_qubits=self.n_qubits,savepath=plot_path,title=title)
+            plot_distribution3D(results=results,n_qubits=self.n_qubits,savepath=plot_path,title=title, clear_fig=clear_fig)
 
-    def _run_experiment_locally(self):
+    def _run_experiment_locally(self, show_fig = False):
         """Run a quantum walk experiment on local hardware"""
         timer = Timer()
         timer.start()
@@ -190,7 +194,7 @@ class SingleExperiment(Experiment):
         python_elapsed_time = Timer.seconds_to_hms(timer.stop())
         print(python_elapsed_time)
         
-        self._process_results(results,qiskit_time)
+        self._process_results(results,qiskit_time, show_fig)
 
     def submit_job_to_IBM(self):
 
@@ -218,7 +222,7 @@ class SingleExperiment(Experiment):
 
 
 
-    def _process_results(self,results,elapsed_time):
+    def _process_results(self,results,elapsed_time, show_fig = False):
         experiment_name = "{}D_Walk_{}_bit_{}_{}_steps".format(self.n_dims,2**self.n_qubits, self.walk.shift_coin._name,self.n_steps)
         debug_file_path = self.path + '/debug/debug_{}.txt'.format(experiment_name)
         with open(debug_file_path, 'w') as f:
@@ -234,7 +238,7 @@ class SingleExperiment(Experiment):
 
         results = pd.DataFrame(results)
         results.to_csv(data_path)
-        self._plot_distribution(results=results, plot_path=plot_path)
+        self._plot_distribution(results=results, plot_path=plot_path, show_fig = show_fig)
 
         # draw the circuit
         self.walk.draw_debug(circuit_diagram_path)
@@ -256,10 +260,10 @@ class SingleExperiment(Experiment):
 
 
 
-    def run_locally(self):
+    def run_locally(self, show_fig = False):
         """runs a monte carlo simulation after a varied number of timesteps specified by `self.stepsize` and `self.max_iterations`"""
         self._build_filetree()
-        self._run_experiment_locally()
+        self._run_experiment_locally(show_fig)
 
     def process_IBM_results(self):
         self._build_filetree()

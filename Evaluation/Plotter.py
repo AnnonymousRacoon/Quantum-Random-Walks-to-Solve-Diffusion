@@ -5,7 +5,7 @@ import sys
 
 sns.set_style("whitegrid")
 
-def plot_distribution1D(results,n_qubits,savepath,title = None):
+def plot_distribution1D(results,n_qubits,savepath,title = None, clear_fig = True):
     """plots diffusion for 1D data"""
 
     x,probability_density = results["dimension_0"],results["probability_density"]
@@ -25,12 +25,13 @@ def plot_distribution1D(results,n_qubits,savepath,title = None):
     plt.ylabel('Probability Density')
     plt.title(title)
     plt.savefig(savepath,dpi = 300)
-    plt.cla()
+    if clear_fig:
+        plt.cla()
 
-def plot_distribution2D(results,n_qubits,savepath,title = None):
+def plot_distribution2D(results,n_qubits,savepath,title = None, clear_fig = True):
     """plots diffusion for 2D data"""
 
-    x,y,probability_density = results["dimension_0"],results["dimension_1"],results["probability_density"]
+    y,x,probability_density = results["dimension_0"],results["dimension_1"],results["probability_density"]
     axes_limit = (2**n_qubits)-1
     if title is None:
         title = "diffusion on an {0}x{0} grid".format(axes_limit+1)
@@ -47,13 +48,14 @@ def plot_distribution2D(results,n_qubits,savepath,title = None):
     plt.ylabel('Y')
     plt.title(title)
     plt.savefig(savepath,dpi = 300)
-    plt.cla()
+    if clear_fig:
+        plt.cla()
 
 
-def plot_distribution3D(results,n_qubits,savepath,title = None):
+def plot_distribution3D(results,n_qubits,savepath,title = None, clear_fig = True):
     """plots diffusion for 3D data"""
     
-    x,y,z,probability_density = results["dimension_0"],results["dimension_1"],results["dimension_2"],results["probability_density"]
+    z,y,x,probability_density = results["dimension_0"],results["dimension_1"],results["dimension_2"],results["probability_density"]
     axes_limit = (2**n_qubits)-1
     if title is None:
         title = "diffusion on an {0}x{0}x{0} grid".format(axes_limit+1)
@@ -76,4 +78,5 @@ def plot_distribution3D(results,n_qubits,savepath,title = None):
     ax.set_zlabel('Z')
     ax.set_title(title)
     plt.savefig(savepath,dpi = 300)
-    plt.cla()
+    if clear_fig:
+        plt.cla()
