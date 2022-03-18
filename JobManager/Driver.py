@@ -10,7 +10,9 @@ from math import pi
 parser = ExperimentParser()
 args = parser.parse_args()
 
-backend = backend_dict.get(args.get("backend"))()
+backend = backend_dict.get(args.get("backend"))
+if backend:
+    backend = backend()
 BACKEND = Backend(use_GPU=args.get("GPU"), IBMQ_device_name=args.get("IBMDeviceName"),backend=backend)
 
 def generate_boundary_control_code_dict():
@@ -97,14 +99,14 @@ else:
 kwargs["boundary_controls"] = generate_boundary_controls()
 kwargs["coin_class"] = coin_class_dict.get(args.get("coin"), HadamardCoin)
 kwargs["coin_kwargs"] = generate_coin_kwargs()
-kwargs["decoherence_intervals"] = args.get("decoherence_intervals")
 kwargs["backend"] = BACKEND
 
 walk_class = walk_type_dict.get(args["ndims"])
 walk = walk_class(**kwargs)
 
+decoherence_intervals = args.get("decoherence_intervals")
 
-Experiment = SingleExperiment(walk,args["ndims"],args["nqubits"],args["shots"],args["nsteps"])
+Experiment = SingleExperiment(walk,args["ndims"],args["nqubits"],args["shots"],args["nsteps"],decoherence_intervals=decoherence_intervals)
 Experiment.run_locally()
 
 
