@@ -1,0 +1,25 @@
+Name: "2D_Manual_config_debug"
+ExperimentParams:
+  Type: Single
+  NSteps: 10
+  NDims: 2
+  NQubits: 3
+  Coin: "Hadamard"
+  Boundaries:
+
+    - Type: "Hard"
+      Bitstring: "010"
+      Dim: 1
+    
+    - Type: Soft
+      Bitstring: "101"
+      ControlClass: "Hadamard"
+      NQubits: 1
+      Dim: 1
+
+
+
+  InitialState: "000 001"
+  Shots: 1024
+
+OutputPath: "/Users/Ali/Downloads"

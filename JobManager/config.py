@@ -243,7 +243,7 @@ class Config:
         subprocess.run("rm -r jobs", shell=True)
 
 
-    def _run_on_PBS(self):
+    def run_on_PBS(self):
         self._build_job_filetree()
         self._build_save_directory()
         self._generate_job_files()
@@ -260,8 +260,8 @@ class Config:
             return self.experiment_params.get("InitialState").split()
 
     def gen_experiment_from_config(self):
-        """run a single experiment on IBM devices"""
-        assert self.experiment_params.get("Type","Single") == "Single", "Currently only supports single jobs for pushing to IBM devices"
+        """run a single experiment"""
+        assert self.experiment_params.get("Type","Single") == "Single", "Currently only supports single jobs"
         device_name = self.__job_params.get('IBMDeviceName')
 
         backend = backend_dict.get(self.__job_params.get("Backend"))
@@ -293,6 +293,6 @@ class Config:
         if self.__job_params.get('IBMDeviceName'):
             self._run_on_IBM()
         else:
-            self._run_on_PBS()
+            self.run_on_PBS()
 
         

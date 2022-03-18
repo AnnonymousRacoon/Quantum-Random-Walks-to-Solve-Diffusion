@@ -1,17 +1,13 @@
 Name: "Soft_boundary_debug"
 ExperimentParams:
   Type: Single
-  NSteps: 2
-  NDims: 2
+  NSteps: 20
+  NDims: 1
   NQubits: 5
-  Coin: "Grover"
+  Coin: "Hadamard"
   InitialStates: "auto"
   Boundaries:
 
-    - Geometry: "Edges"
-      Type: "Soft"
-      ControlClass: "Hadamard"
-      Padding: 4
 
     - Type: "Hard"
       Geometry: "Edges"
@@ -19,6 +15,8 @@ ExperimentParams:
 
   InitialState: "auto"
   Shots: 2048
+  DecoherenceIntervals: 6
+
 
 JobParams:
   NCPUs: 32
@@ -27,4 +25,4 @@ JobParams:
   BatchSize: 1
 
 KeepJobFiles: true
-DataPath: "."
+OutputPath: "/Users/Ali/Downloads"

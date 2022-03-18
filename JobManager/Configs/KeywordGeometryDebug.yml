@@ -1,0 +1,18 @@
+Name: "2D_keyword_config_debug"
+ExperimentParams:
+  Type: Single
+  NSteps: 10
+  NDims: 2
+  NQubits: 3
+  Coin: Hadamard
+  Boundaries:
+
+    - Type: Hard
+      Geometry: Edges
+      Padding: 2
+    
+
+  InitialState: auto
+  Shots: 1024
+
+OutputPath: "/Users/Ali/Downloads"
