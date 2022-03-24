@@ -2,6 +2,7 @@
 from qiskit import QuantumCircuit
 from qiskit.circuit import ControlledGate, Gate
 from math import pi
+from DiffusionProject.Algorithms.BuildingBlocks import qft
 
 
 class Control:
@@ -101,6 +102,14 @@ class GroverCoin(Coin):
         self._control_circuit.h(qubit_indices)
          #  -----------
         
+        self._gate = self._control_circuit.to_gate(label = self._name)
+
+
+class DFTCoin(Coin):
+    def __init__(self, n_qubits) -> None:
+        super().__init__(n_qubits)
+        self._name = "DFT Coin"
+        qft(self._control_circuit,n_qubits=n_qubits)
         self._gate = self._control_circuit.to_gate(label = self._name)
 
 
