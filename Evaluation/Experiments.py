@@ -1,4 +1,3 @@
-from turtle import clear
 from DiffusionProject.Algorithms.Coins import HadamardCoin
 from DiffusionProject.Algorithms.Walks import QuantumWalk, QuantumWalk1D, QuantumWalk2D, QuantumWalk3D
 from DiffusionProject.Backends.backend import Backend
@@ -8,7 +7,6 @@ from DiffusionProject.Utils.timer import Timer
 import pandas as pd
 import subprocess
 
-from sympy import false
 
 
 
