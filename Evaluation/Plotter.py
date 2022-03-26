@@ -52,6 +52,50 @@ def plot_distribution2D(results,n_qubits,savepath,title = None, clear_fig = True
         plt.cla()
 
 
+def plot_distribution_2D_topological(results,n_qubits,savepath,title = None, clear_fig = True):
+
+    y,x,probability_density = results["dimension_0"],results["dimension_1"],results["probability_density"]
+    axes_limit = (2**n_qubits)-1
+
+    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+
+    # Make data.
+    X = np.arange(0,axes_limit+1, 1, dtype=float)
+    Y = np.arange(0,axes_limit+1, 1, dtype=float)
+    X, Y = np.meshgrid(X, Y)
+    Z = X*0
+
+    for px,py,prob in zip(x,y,probability_density):
+        Z[px][py] = prob
+
+
+    plt.cla()
+    # Plot the surface.
+    surf = ax.plot_surface(X, Y, Z, cmap=cm.viridis,
+                        linewidth=0, antialiased=True)
+
+    # Customize the z axis.
+    # ax.set_zlim(0,1)
+    ax.zaxis.set_major_locator(LinearLocator(10))
+    # A StrMethodFormatter is used automatically
+    ax.zaxis.set_major_formatter('{x:.02f}')
+
+    # Add a color bar which maps values to colors.
+    fig.colorbar(surf, shrink=0.5, aspect=5)
+
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Probability')
+
+
+    ax.set_title(title)
+    plt.savefig(savepath,dpi = 300)
+    if clear_fig:
+        plt.cla()
+
+
+
+
 def plot_distribution3D(results,n_qubits,savepath,title = None, clear_fig = True):
     """plots diffusion for 3D data"""
     

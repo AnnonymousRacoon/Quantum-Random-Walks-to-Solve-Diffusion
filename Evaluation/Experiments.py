@@ -2,7 +2,7 @@ from DiffusionProject.Algorithms.Coins import HadamardCoin
 from DiffusionProject.Algorithms.Walks import QuantumWalk, QuantumWalk1D, QuantumWalk2D, QuantumWalk3D
 from DiffusionProject.Backends.backend import Backend
 from DiffusionProject.Algorithms.Boundaries import BoundaryControl, Boundary
-from DiffusionProject.Evaluation.Plotter import plot_distribution2D, plot_distribution3D, plot_distribution1D
+from DiffusionProject.Evaluation.Plotter import plot_distribution2D, plot_distribution3D, plot_distribution1D, plot_distribution_2D_topological
 from DiffusionProject.Utils.timer import Timer
 import pandas as pd
 import subprocess
@@ -173,7 +173,8 @@ class SingleExperiment(Experiment):
             plot_distribution1D(results=results,n_qubits=self.n_qubits,savepath=plot_path,title=title, clear_fig=clear_fig)
         if self.n_dims == 2:
             title = "diffusion on an {0}x{0} grid with a {1}".format(2**self.n_qubits, self.walk.shift_coin._name)
-            plot_distribution2D(results=results,n_qubits=self.n_qubits,savepath=plot_path,title=title, clear_fig=clear_fig)
+            # plot_distribution2D(results=results,n_qubits=self.n_qubits,savepath=plot_path,title=title, clear_fig=clear_fig)
+            plot_distribution_2D_topological(results=results,n_qubits=self.n_qubits,savepath=plot_path,title=title, clear_fig=clear_fig)
         elif self.n_dims == 3:
             title = "diffusion on an {0}x{0}*{0} grid with a {1}".format(2**self.n_qubits, self.walk.shift_coin._name)
             plot_distribution3D(results=results,n_qubits=self.n_qubits,savepath=plot_path,title=title, clear_fig=clear_fig)
