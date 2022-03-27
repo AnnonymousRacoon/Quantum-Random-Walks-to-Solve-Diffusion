@@ -1,7 +1,10 @@
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
+from matplotlib import cm
+from matplotlib.ticker import LinearLocator
 import seaborn as sns
 import sys
+import numpy as np
 
 sns.set_style("whitegrid")
 
