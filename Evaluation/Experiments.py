@@ -166,15 +166,17 @@ class SingleExperiment(Experiment):
         else:
             self.path = self.directory_path +'/' + experiment_name
 
-    def _plot_distribution(self, results, plot_path, show_fig = False):
+    def _plot_distribution(self, results, plot_path, auxillary_plot_path = None, show_fig = False):
         clear_fig = not show_fig
         if self.n_dims == 1:
             title = "diffusion on an {0} digit line with a {1}".format(2**self.n_qubits, self.walk.shift_coin._name)
             plot_distribution1D(results=results,n_qubits=self.n_qubits,savepath=plot_path,title=title, clear_fig=clear_fig)
         if self.n_dims == 2:
             title = "diffusion on an {0}x{0} grid with a {1}".format(2**self.n_qubits, self.walk.shift_coin._name)
-            # plot_distribution2D(results=results,n_qubits=self.n_qubits,savepath=plot_path,title=title, clear_fig=clear_fig)
-            plot_distribution_2D_topological(results=results,n_qubits=self.n_qubits,savepath=plot_path,title=title, clear_fig=clear_fig)
+            plot_distribution2D(results=results,n_qubits=self.n_qubits,savepath=plot_path,title=title, clear_fig=clear_fig)
+
+            if auxillary_plot_path:
+                plot_distribution_2D_topological(results=results,n_qubits=self.n_qubits,savepath=auxillary_plot_path,title=title, clear_fig=clear_fig)
         elif self.n_dims == 3:
             title = "diffusion on an {0}x{0}*{0} grid with a {1}".format(2**self.n_qubits, self.walk.shift_coin._name)
             plot_distribution3D(results=results,n_qubits=self.n_qubits,savepath=plot_path,title=title, clear_fig=clear_fig)
@@ -232,12 +234,13 @@ class SingleExperiment(Experiment):
        
         data_path = self.path + "/data/{}_results.csv".format(experiment_name)
         plot_path = self.path + "/images/{}.png".format(experiment_name)
+        auxillary_plot_path = self.path + "/auxillary_plots/{}.png".format(experiment_name)
         circuit_diagram_path = self.path + "/circuit_diagram.png"
       
 
         results = pd.DataFrame(results)
         results.to_csv(data_path)
-        self._plot_distribution(results=results, plot_path=plot_path, show_fig = show_fig)
+        self._plot_distribution(results=results, plot_path=plot_path, auxillary_plot_path=auxillary_plot_path, show_fig = show_fig)
 
         # draw the circuit
         self.walk.draw_debug(circuit_diagram_path)

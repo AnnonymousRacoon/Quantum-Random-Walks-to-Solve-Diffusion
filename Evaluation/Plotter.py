@@ -60,7 +60,7 @@ def plot_distribution_2D_topological(results,n_qubits,savepath,title = None, cle
     y,x,probability_density = results["dimension_0"],results["dimension_1"],results["probability_density"]
     axes_limit = (2**n_qubits)-1
 
-    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+    fig, ax = plt.subplots(1,2,subplot_kw={"projection": "3d"})
 
     # Make data.
     X = np.arange(0,axes_limit+1, 1, dtype=float)
@@ -73,25 +73,27 @@ def plot_distribution_2D_topological(results,n_qubits,savepath,title = None, cle
 
 
     plt.cla()
-    # Plot the surface.
-    surf = ax.plot_surface(X, Y, Z, cmap=cm.viridis,
-                        linewidth=0, antialiased=True)
 
-    # Customize the z axis.
-    # ax.set_zlim(0,1)
-    ax.zaxis.set_major_locator(LinearLocator(10))
-    # A StrMethodFormatter is used automatically
-    ax.zaxis.set_major_formatter('{x:.02f}')
+    for subplot_idx in range(2):
+        # Plot the surface.
+        surf = ax[subplot_idx].plot_surface(X, Y, Z, cmap=cm.viridis,
+                            linewidth=0, antialiased=True)
+
+        # Customize the z axis.
+        # ax.set_zlim(0,1)
+        ax[subplot_idx].zaxis.set_major_locator(LinearLocator(10))
+        # A StrMethodFormatter is used automatically
+        ax[subplot_idx].zaxis.set_major_formatter('{x:.02f}')
+        ax[subplot_idx].set_xlabel('X')
+        ax[subplot_idx].set_ylabel('Y')
+        ax[subplot_idx].set_zlabel('Probability')
+        ax[subplot_idx].set_title(title)
 
     # Add a color bar which maps values to colors.
     fig.colorbar(surf, shrink=0.5, aspect=5)
+    ax[0].view_init(azim=0, elev=90) 
 
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Probability')
-
-
-    ax.set_title(title)
+   
     plt.savefig(savepath,dpi = 300)
     if clear_fig:
         plt.cla()

@@ -1,8 +1,10 @@
 
 from qiskit import QuantumCircuit
 from qiskit.circuit import ControlledGate, Gate
-from math import pi
 from DiffusionProject.Algorithms.BuildingBlocks import qft
+from qiskit.quantum_info.operators import Operator
+import numpy as np
+from numpy import pi, cos, sin, exp
 
 
 class Control:
@@ -205,7 +207,47 @@ class LeftPlusKickBackCoin(PhaseKickbackCoin):
         self._name = "Left Plus Kickback Coin"
 
         
-
+class SU2BasicCoin(Coin):
+    def __init__(self, n_qubits,theta,zeta,xi) -> None:
+        super().__init__(n_qubits)
+        self._name = "SU2 Coin"
+        SU2_arr = np.array([[exp(1j*xi)*cos(theta), exp(1j*zeta)*sin(theta)],
+                [exp(-1j*zeta)*sin(theta), -exp(-1j*xi)*cos(theta)]])
+        SU2 = Operator(SU2_arr)
+        for qubit_idx in range(n_qubits):
+            self._control_circuit.append(SU2, [qubit_idx])
+    
+        self._gate = self._control_circuit.to_gate(label = self._name)
 
 
     
+class SU2Coin(Coin):
+    def __init__(self, n_qubits,theta,zeta,xi) -> None:
+        super().__init__(n_qubits)
+        self._name = "SU2 Coin"
+
+        if type(theta) == list:
+            assert len(theta) == n_qubits, "Value error, len(theta) must be equal to the number of qubits"
+        else:
+            theta = [theta for _ in range(n_qubits)]
+        
+        if type(zeta) == list:
+            assert len(zeta) == n_qubits, "Value error, len(zeta) must be equal to the number of qubits"
+        else:
+            zeta = [zeta for _ in range(n_qubits)]
+
+        if type(xi) == list:
+            assert len(xi) == n_qubits, "Value error, len(xi) must be equal to the number of qubits"
+        else:
+            xi = [xi for _ in range(n_qubits)]
+        
+        for qubit_idx in range(n_qubits):
+
+            SU2_arr = np.array([[exp(1j*xi[qubit_idx])*cos(theta[qubit_idx]), exp(1j*zeta[qubit_idx])*sin(theta[qubit_idx])],
+                    [exp(-1j*zeta[qubit_idx])*sin(theta[qubit_idx]), -exp(-1j*xi[qubit_idx])*cos(theta[qubit_idx])]])
+            SU2 = Operator(SU2_arr)
+        
+            self._control_circuit.append(SU2, [qubit_idx])
+
+    
+        self._gate = self._control_circuit.to_gate(label = self._name)
