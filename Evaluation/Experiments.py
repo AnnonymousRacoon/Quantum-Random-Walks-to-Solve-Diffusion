@@ -50,6 +50,7 @@ class Experiment:
         subprocess.run("mkdir {}".format(self.path), shell=True)
         subprocess.run("mkdir {}/images".format(self.path), shell=True)
         subprocess.run("mkdir {}/data".format(self.path), shell=True)
+        subprocess.run("mkdir {}/auxillary_plots".format(self.path), shell=True)
         subprocess.run("mkdir {}/debug".format(self.path), shell=True)
 
     def _plot_distribution(self, experiment_number, results, plot_path):

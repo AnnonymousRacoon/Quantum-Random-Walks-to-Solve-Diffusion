@@ -76,7 +76,7 @@ def generate_coin_kwargs():
         return {}
 
     kwargs_dict = {}
-    kwargs_list = kwargs_str.split(" ")
+    kwargs_list = kwargs_str.split(",")
     for keyword_arg in kwargs_list:
         param,value = keyword_arg.split('=')
         kwargs_dict[param] = eval(value)

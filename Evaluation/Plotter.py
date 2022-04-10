@@ -9,6 +9,7 @@ import numpy as np
 sns.set_style("whitegrid")
 
 def plot_distribution1D(results,n_qubits,savepath,title = None, clear_fig = True):
+    plt.rcParams.update({'figure.figsize': (10,10)})
     """plots diffusion for 1D data"""
 
     x,probability_density = results["dimension_0"],results["probability_density"]
@@ -33,7 +34,7 @@ def plot_distribution1D(results,n_qubits,savepath,title = None, clear_fig = True
 
 def plot_distribution2D(results,n_qubits,savepath,title = None, clear_fig = True):
     """plots diffusion for 2D data"""
-
+    plt.rcParams.update({'figure.figsize': (10,10)})
     y,x,probability_density = results["dimension_0"],results["dimension_1"],results["probability_density"]
     axes_limit = (2**n_qubits)-1
     if title is None:
@@ -56,7 +57,7 @@ def plot_distribution2D(results,n_qubits,savepath,title = None, clear_fig = True
 
 
 def plot_distribution_2D_topological(results,n_qubits,savepath,title = None, clear_fig = True):
-
+    plt.rcParams.update({'figure.figsize': (20,10)})
     y,x,probability_density = results["dimension_0"],results["dimension_1"],results["probability_density"]
     axes_limit = (2**n_qubits)-1
 
@@ -103,7 +104,7 @@ def plot_distribution_2D_topological(results,n_qubits,savepath,title = None, cle
 
 def plot_distribution3D(results,n_qubits,savepath,title = None, clear_fig = True):
     """plots diffusion for 3D data"""
-    
+    plt.rcParams.update({'figure.figsize': (10,10)})
     z,y,x,probability_density = results["dimension_0"],results["dimension_1"],results["dimension_2"],results["probability_density"]
     axes_limit = (2**n_qubits)-1
     if title is None:
