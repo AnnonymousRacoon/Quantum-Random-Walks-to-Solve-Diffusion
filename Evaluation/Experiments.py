@@ -3,9 +3,12 @@ from DiffusionProject.Algorithms.Walks import QuantumWalk, QuantumWalk1D, Quantu
 from DiffusionProject.Backends.backend import Backend
 from DiffusionProject.Algorithms.Boundaries import BoundaryControl, Boundary
 from DiffusionProject.Evaluation.Plotter import plot_distribution2D, plot_distribution3D, plot_distribution1D, plot_distribution_2D_topological
+from DiffusionProject.Evaluation.PostProcesing import rebuild_counts_from_dictionary, get_stats_from_counts_dict
 from DiffusionProject.Utils.timer import Timer
 import pandas as pd
 import subprocess
+
+from sklearn import covariance
 
 
 
@@ -247,7 +250,9 @@ class SingleExperiment(Experiment):
         self.walk.draw_debug(circuit_diagram_path)
 
         # get covariance
-        covariance_matrix = self.walk.get_covariance_tensor()
+        results_rebuilt = rebuild_counts_from_dictionary(results)
+        stats = get_stats_from_counts_dict(results_rebuilt)
+        covariance_matrix = stats["cov"]
 
         # output diffusion tensor to debig output
         print("Elapsed experiment time: {} ".format(Timer.seconds_to_hms(elapsed_time)))
