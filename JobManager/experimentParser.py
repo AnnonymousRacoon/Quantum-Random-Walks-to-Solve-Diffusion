@@ -1,4 +1,5 @@
 import argparse
+from email.policy import default
 
 class ExperimentParser:
     def __init__(self) -> None:
@@ -15,6 +16,7 @@ class ExperimentParser:
         self.__parser.add_argument('--shots', action='store', type=int, default = 2048)
         self.__parser.add_argument('--GPU', action='store_true', default = False)
         self.__parser.add_argument('--IBMDeviceName', action='store', type=str)
+        self.__parser.add_argument('--independant', action='store_true', default = False)
         self.__args = None
 
     def parse_args(self) -> dict:

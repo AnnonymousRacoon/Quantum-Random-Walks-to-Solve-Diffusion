@@ -131,6 +131,7 @@ dmypy.json
 # ignore generated png files,
 *.png
 *.yml
+!*2DIndependant.yml
 
 # ignore playground
 *TestNotebooks/*

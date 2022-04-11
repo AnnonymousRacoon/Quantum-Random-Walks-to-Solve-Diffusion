@@ -1,0 +1,27 @@
+Name: "7qubits2D_SU_pi_4_2048shots_62gb"
+ExperimentParams:
+  Type: Batch
+  BatchParams:
+    StepSize: 20
+    StartIterations: 0
+    MaxIterations: 300
+  NDims: 2
+  IndependantWalk: true
+  NQubits: 7
+  Coin: "SU2"
+  CoinKwargs: "theta=pi/4,xi=0,zeta=0"
+
+  Boundaries:
+    - Type: "Hard"
+      Geometry: "Edges"
+  
+  InitialState: "auto"
+  Shots: 2048
+
+JobParams:
+  NCPUs: 32
+  Memory: 62
+  Walltime: 72
+  BatchSize: 1
+
+KeepJobFiles: false

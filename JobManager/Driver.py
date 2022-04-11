@@ -101,7 +101,11 @@ kwargs["coin_class"] = coin_class_dict.get(args.get("coin"), HadamardCoin)
 kwargs["coin_kwargs"] = generate_coin_kwargs()
 kwargs["backend"] = BACKEND
 
-walk_class = walk_type_dict.get(args["ndims"])
+# Generate walk from walktype 
+walk_type_dict_key = args["ndims"]
+if args["independant"]:
+    walk_type_dict_key*=-1
+walk_class = walk_type_dict.get(walk_type_dict_key)
 walk = walk_class(**kwargs)
 
 decoherence_intervals = args.get("decoherence_intervals")

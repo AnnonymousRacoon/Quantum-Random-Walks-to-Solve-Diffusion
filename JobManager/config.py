@@ -139,7 +139,7 @@ class Config:
         python_call = python_call + self._write_boundary_string()
         
         if self.experiment_params.get("InitialState"):
-            python_call = python_call +' --in {}'.format(self.experiment_params.get("InitialState"))
+            python_call = python_call +' --ini {}'.format(self.experiment_params.get("InitialState"))
         if self.experiment_params.get("DecoherenceIntervals"):
             python_call = python_call +' --decoherence_intervals {}'.format(self.experiment_params.get("DecoherenceIntervals"))
         if self.experiment_params.get("Coin"):
@@ -154,6 +154,8 @@ class Config:
             python_call = python_call + ' --IBMDeviceName {}'.format(IBM_device_name)
         if self.__job_params.get("Backend"):
             python_call = python_call + ' --backend {}'.format(self.__job_params.get("Backend"))
+        if self.experiment_params.get("IndependantWalk"):
+            python_call = python_call + ' --independant 1'
 
         return python_call
 

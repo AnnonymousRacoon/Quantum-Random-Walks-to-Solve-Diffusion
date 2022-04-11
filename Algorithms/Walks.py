@@ -492,3 +492,25 @@ class QuantumWalk1D(QuantumWalk):
         self.wrap_shift(operator = self.add_left_shift,coin_bitstring = "1",dimension=0)
         self.wrap_shift(operator = self.add_right_shift,coin_bitstring = "0",dimension=0)
         self.reset_boundaries()
+
+class QuantumWalk2DIndependant(QuantumWalk):
+
+    def __init__(self,backend: Backend, system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class=None, coin_kwargs = {}, boundary_controls = [], coin_decoherence_cycle: CoinDecoherenceCycle = None) -> None:
+        assert len(system_dimensions) == 2
+        super().__init__(backend,system_dimensions, initial_states, n_shift_coin_bits, coin_class, coin_kwargs, boundary_controls, coin_decoherence_cycle)
+
+    def step(self) -> None:
+        self.add_coins()
+        for boundary in self.boundary_controls:
+            self.apply_boundary(boundary)
+        # dimension 0
+        self.wrap_shift(operator = self.add_left_shift,coin_bitstring = "10",dimension=0)
+        self.wrap_shift(operator = self.add_left_shift,coin_bitstring = "11",dimension=0)
+        self.wrap_shift(operator = self.add_right_shift,coin_bitstring = "01",dimension=0)
+        self.wrap_shift(operator = self.add_right_shift,coin_bitstring = "00",dimension=0)
+        # dimension 1
+        self.wrap_shift(operator = self.add_left_shift,coin_bitstring = "00",dimension=1)
+        self.wrap_shift(operator = self.add_left_shift,coin_bitstring = "10",dimension=1)
+        self.wrap_shift(operator = self.add_right_shift,coin_bitstring = "11",dimension=1)
+        self.wrap_shift(operator = self.add_right_shift,coin_bitstring = "01",dimension=1)
+        self.reset_boundaries()
