@@ -164,7 +164,7 @@ class SingleExperiment(Experiment):
         # name experiment
         self.coin_name = str(self.walk.shift_coin._name).split()[0]
         if experiment_name is None:
-            self.path = self.directory_path +'/' + "Experiment_{}_dims_{}_qubits_{}_coin".format(self.n_dims,self.n_qubits,self.coin_name)
+            self.path = self.directory_path +'/' + "Experiment_{}_dims_{}_qubits_{}_coin_{}_shots".format(self.n_dims,self.n_qubits,self.coin_name,self.shots)
         else:
             self.path = self.directory_path +'/' + experiment_name
 
@@ -248,7 +248,7 @@ class SingleExperiment(Experiment):
         self.walk.draw_debug(circuit_diagram_path)
 
         # get covariance
-        results_rebuilt = rebuild_counts_from_dictionary(results)
+        results_rebuilt = rebuild_counts_from_dictionary(results,n_dims=self.n_dims,shots=self.shots)
         stats = get_stats_from_counts_dict(results_rebuilt)
         covariance_matrix = stats["cov"]
 
