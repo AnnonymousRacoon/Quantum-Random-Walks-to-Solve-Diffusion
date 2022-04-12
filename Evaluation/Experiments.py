@@ -8,8 +8,6 @@ from DiffusionProject.Utils.timer import Timer
 import pandas as pd
 import subprocess
 
-from sklearn import covariance
-
 
 
 
