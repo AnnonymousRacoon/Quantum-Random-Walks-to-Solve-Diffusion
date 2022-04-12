@@ -271,7 +271,7 @@ class Config:
 
         walk_type_key = self.n_dims
         if self.experiment_params.get("IndependantWalk"):
-            walk_type_dict*=-1
+            walk_type_key*=-1
 
         walk_class = walk_type_dict.get(walk_type_key)
         initial_states = self.generate_initial_states()
