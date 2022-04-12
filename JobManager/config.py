@@ -147,7 +147,7 @@ class Config:
         if self.experiment_params.get("CoinKwargs"):
             python_call = python_call + ' --coin_kwargs {}'.format(self.experiment_params.get("CoinKwargs"))
         if use_GPU:
-            python_call = python_call + ' --GPU 1'
+            python_call = python_call + ' --GPU'
         if self.experiment_params.get("Shots"):
             python_call = python_call + ' --s {}'.format(self.experiment_params.get("Shots"))
         if IBM_device_name:
@@ -155,7 +155,7 @@ class Config:
         if self.__job_params.get("Backend"):
             python_call = python_call + ' --backend {}'.format(self.__job_params.get("Backend"))
         if self.experiment_params.get("IndependantWalk"):
-            python_call = python_call + ' --independant 1'
+            python_call = python_call + ' --independant'
 
         return python_call
 
