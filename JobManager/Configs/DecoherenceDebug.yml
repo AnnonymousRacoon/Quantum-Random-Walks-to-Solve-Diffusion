@@ -15,6 +15,7 @@ ExperimentParams:
 
   InitialState: "auto"
   Shots: 2048
+  DecohereCoinOnly: true
   DecoherenceIntervals: 6
 
 

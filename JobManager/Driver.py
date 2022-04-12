@@ -4,6 +4,7 @@ from DiffusionProject.Algorithms.Boundaries import Boundary, OneWayBoundaryContr
 from DiffusionProject.Evaluation.Experiments import Experiment, SingleExperiment
 from DiffusionProject.JobManager.experimentParser import ExperimentParser
 from DiffusionProject.Utils.configCodes import coin_class_dict, walk_type_dict, backend_dict
+from DiffusionProject.Algorithms.Decoherence import CoinDecoherenceCycle
 from math import pi
 
 
@@ -101,14 +102,28 @@ kwargs["coin_class"] = coin_class_dict.get(args.get("coin"), HadamardCoin)
 kwargs["coin_kwargs"] = generate_coin_kwargs()
 kwargs["backend"] = BACKEND
 
+# Generate Coin decoherence Cycle
+if args.get("decohere_coin_only"):
+    assert args.get("decoherence_intervals") is not None
+    target_qubits = [i for i in range(args["ndims"])]
+    decoherence_cycle = CoinDecoherenceCycle(args.get("decoherence_intervals"),target_qubits=target_qubits)
+    kwargs["coin_decoherence_cycle"] = decoherence_cycle
+
 # Generate walk from walktype 
 walk_type_dict_key = args["ndims"]
 if args["independant"]:
     walk_type_dict_key*=-1
 walk_class = walk_type_dict.get(walk_type_dict_key)
+
+
+
+
 walk = walk_class(**kwargs)
 
-decoherence_intervals = args.get("decoherence_intervals")
+if args.get("decohere_coin_only") == False:
+    decoherence_intervals = args.get("decoherence_intervals")
+else:
+    decoherence_intervals = None
 
 Experiment = SingleExperiment(walk,args["ndims"],args["nqubits"],args["shots"],args["nsteps"],decoherence_intervals=decoherence_intervals)
 Experiment.run_locally()

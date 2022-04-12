@@ -142,6 +142,8 @@ class Config:
             python_call = python_call +' --ini {}'.format(self.experiment_params.get("InitialState"))
         if self.experiment_params.get("DecoherenceIntervals"):
             python_call = python_call +' --decoherence_intervals {}'.format(self.experiment_params.get("DecoherenceIntervals"))
+        if self.experiment_params.get("DecohereCoinOnly"):
+            python_call = python_call + ' --decohere_coin_only'
         if self.experiment_params.get("Coin"):
             python_call = python_call + ' --coin {}'.format(self.experiment_params.get("Coin"))
         if self.experiment_params.get("CoinKwargs"):

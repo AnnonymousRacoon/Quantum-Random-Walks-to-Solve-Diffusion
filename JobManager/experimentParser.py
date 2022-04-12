@@ -11,6 +11,7 @@ class ExperimentParser:
         self.__parser.add_argument('--coin', action='store', type=str)
         self.__parser.add_argument('--coin_kwargs', action='store', type=str)
         self.__parser.add_argument('--decoherence_intervals', action='store',type=int)
+        self.__parser.add_argument('--decohere_coin_only', action='store_true', default = False)
         self.__parser.add_argument('--nsteps', action='store', type=int, default = 10)
         self.__parser.add_argument('--shots', action='store', type=int, default = 2048)
         self.__parser.add_argument('--GPU', action='store_true', default = False)
