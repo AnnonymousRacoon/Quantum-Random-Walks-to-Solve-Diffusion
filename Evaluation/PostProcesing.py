@@ -1,4 +1,5 @@
 import pandas as pd
+import re
 
 
 def rebuild_counts_from_csv(path,n_dims, shots):
@@ -47,8 +48,10 @@ def get_stats_from_counts_dataframe(counts_dataframe: pd.DataFrame)-> dict:
     results_dict["corr"] = counts_dataframe.corr()
     results_dict["cov"] = counts_dataframe.cov()
     results_dict["mean"] = counts_dataframe.mean()
+    results_dict['var'] = counts_dataframe.var()
     return results_dict
     
-
-
+def get_n_steps_from_filepath(filepath)-> int:
+    filename = filepath.split('/')[-1]
+    return int(re.findall(r"\d+_steps",filename)[0].split('_')[0])
 
