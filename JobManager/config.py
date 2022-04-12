@@ -268,7 +268,12 @@ class Config:
 
         backend = backend_dict.get(self.__job_params.get("Backend"))
         BACKEND = Backend(use_GPU=False, IBMQ_device_name=device_name,backend=backend )
-        walk_class = walk_type_dict.get(self.n_dims)
+
+        walk_type_key = self.n_dims
+        if self.experiment_params.get("IndependantWalk"):
+            walk_type_dict*=-1
+
+        walk_class = walk_type_dict.get(walk_type_key)
         initial_states = self.generate_initial_states()
         boundary_controls = self.generate_boundary_controls()
         coin_class = coin_class_dict.get(self.experiment_params.get("Coin"))
