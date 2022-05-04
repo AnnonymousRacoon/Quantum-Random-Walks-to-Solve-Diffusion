@@ -1,5 +1,6 @@
 import pandas as pd
 import re
+import glob
 
 
 def rebuild_counts_from_csv(path,n_dims, shots):
@@ -55,3 +56,35 @@ def get_n_steps_from_filepath(filepath)-> int:
     filename = filepath.split('/')[-1]
     return int(re.findall(r"\d+_steps",filename)[0].split('_')[0])
 
+def get_n_shots_from_path(path)-> int:
+    experiment_dir_name = path.split('/')[-1]
+    nshots = int(re.findall(r"\d+shots",experiment_dir_name)[0].split('s')[0])
+    return nshots
+
+def get_n_dims_from_path(path)-> int:
+    experiment_dir_name = path.split('/')[-1]
+    ndims = int(re.findall(r"\d+D_",experiment_dir_name)[0].split('D')[0])
+    return ndims
+
+def extract_mean_variance_vs_nsteps(directory_path: str,dimension = 0):
+    nshots = get_n_shots_from_path(directory_path)
+    ndims = get_n_dims_from_path(directory_path)
+    assert dimension < ndims, "queried dimension exceeds experiment space"
+    files = glob.glob(directory_path+'/*/data/**.csv')
+    files.sort(key = get_n_steps_from_filepath)
+
+    n_steps = []
+    variance = []
+    mean = []
+
+    for filepath in files:
+        filename = filepath.split('/')[-1]
+        nsteps = int(re.findall(r"\d+_steps",filename)[0].split('_')[0])
+        rebuilt_dict = rebuild_counts_from_csv(filepath,n_dims=ndims,shots=nshots)
+        stats = get_stats_from_counts_dict(rebuilt_dict)
+        variance.append(stats['var'][dimension])
+        mean.append(stats['mean'][dimension])
+        n_steps.append(nsteps)
+
+    return n_steps, variance, mean
+     

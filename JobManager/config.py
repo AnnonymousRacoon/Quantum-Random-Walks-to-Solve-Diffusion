@@ -7,6 +7,7 @@ from DiffusionProject.Algorithms.Boundaries import Boundary, BoundaryControl
 from DiffusionProject.Backends.backend import Backend
 from DiffusionProject.Evaluation.Experiments import  SingleExperiment
 from DiffusionProject.Utils.configCodes import walk_type_dict, backend_dict,coin_class_dict
+from DiffusionProject.Algorithms.Decoherence import CoinDecoherenceCycle
 
 
 class Config:
@@ -280,8 +281,17 @@ class Config:
         boundary_controls = self.generate_boundary_controls()
         coin_class = coin_class_dict.get(self.experiment_params.get("Coin"))
         system_dimensions = [self.n_dimensional_qubits]*self.n_dims
-        walk = walk_class(BACKEND,system_dimensions=system_dimensions, initial_states=initial_states, coin_class=coin_class, boundary_controls = boundary_controls)
-        experiment = SingleExperiment(walk,self.n_dims,self.n_dimensional_qubits,self.experiment_params.get("Shots",1024),self.experiment_params["NSteps"],decoherence_intervals=self.experiment_params.get("DecoherenceIntervals"),directory_path=self.__config.get("OutputPath"))
+
+        decoherence_intervals = self.experiment_params.get("DecoherenceIntervals")
+        decoherence_cycle = None
+        if self.experiment_params.get("DecohereCoinOnly"):
+            assert decoherence_intervals is not None, "Must specify decoherence intervals if `DecohereCoinOnly` is set to true"
+            target_qubits = [i for i in range(self.n_dims)]
+            decoherence_cycle = CoinDecoherenceCycle(self.experiment_params.get("DecoherenceIntervals"),target_qubits=target_qubits)
+            decoherence_intervals = None
+        
+        walk = walk_class(BACKEND,system_dimensions=system_dimensions, initial_states=initial_states, coin_class=coin_class, boundary_controls = boundary_controls, coin_decoherence_cycle=decoherence_cycle)
+        experiment = SingleExperiment(walk,self.n_dims,self.n_dimensional_qubits,self.experiment_params.get("Shots",1024),self.experiment_params["NSteps"],decoherence_intervals=decoherence_intervals,directory_path=self.__config.get("OutputPath"))
         return experiment
 
     def _run_on_IBM(self):

@@ -101,6 +101,7 @@ def plot_distribution_2D_topological(results,n_qubits,savepath,title = None, cle
     plt.savefig(savepath,dpi = 300)
     if clear_fig:
         plt.cla()
+        plt.close()
 
 
 
