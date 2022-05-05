@@ -1,5 +1,6 @@
 from qiskit import QuantumRegister
 from DiffusionProject.Algorithms.Coins import Coin, CylicController
+from DiffusionProject.Algorithms.Coins import AbsorbingControl
 
 class Boundary:
     """Represents a single boundary plane in a quantum walk algorithm"""
@@ -104,8 +105,13 @@ class BoundaryControl:
 
 
 
+class AbsorbingBoundaryControl(BoundaryControl):
+    def __init__(self, ctrl_state=None, n_resets=2, label=None) -> None:
+        ctrl = AbsorbingControl()
+        super().__init__(ctrl, ctrl_state, n_resets, label)
 
-    
+    def reset_register(self,circuit):
+        pass
 
 
 

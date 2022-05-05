@@ -38,6 +38,13 @@ class Control:
         return self._gate.inverse()
 
 
+class AbsorbingControl(Control):
+    def __init__(self) -> None:
+        super().__init__(1)
+        self._name = "Absobing_control"
+        self._control_circuit.x([0])
+        self._gate = self._control_circuit.to_gate(label = self._name)
+
 
 class CylicController(Control):
     def __init__(self, n_qubits) -> None:
