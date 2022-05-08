@@ -114,7 +114,7 @@ class Config:
                     bitstrings = BoundaryGenerator.generate_boundary_bitstrings(boundary["Geometry"],self.n_dimensional_qubits,boundary.get("Padding",0))
 
                 # default to all dims if no dimension specified
-                if boundary.get("Dim"):
+                if boundary.get("Dim") != None:
                     dims = [boundary["Dim"]]
                 else:
                     dims = [i for i in range(self.n_dims)]
