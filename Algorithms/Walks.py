@@ -4,7 +4,7 @@ from qiskit import QuantumCircuit, QuantumRegister, transpile, assemble
 from qiskit.tools.visualization import circuit_drawer
 import pandas as pd
 from DiffusionProject.Algorithms.Coins import HadamardCoin, CylicController, AbsorbingControl
-from DiffusionProject.Algorithms.Boundaries import Boundary, OneWayBoundaryControl, BoundaryControl, AbsorbingBoundaryControl
+from DiffusionProject.Algorithms.Boundaries import Boundary, OneWayBoundaryControl, BoundaryControl, AbsorbingBoundaryControl, Obstruction
 
 from DiffusionProject.Backends.backend import Backend
 from DiffusionProject.Algorithms.Decoherence import CoinDecoherenceCycle
@@ -44,8 +44,15 @@ class QuantumWalk:
         self.boundary_control_registers = []
         for boundary_control in self.boundary_controls:
             for boundary in boundary_control.boundaries:
-                assert boundary.dimension >= 0 and boundary.dimension < len(self.system_dimensions)
-                assert boundary.n_bits == self.system_dimensions[boundary.dimension]
+                if type(boundary) == Obstruction:
+                    for dim, n_bits in zip(boundary.dimensions, boundary.n_bits):
+                        assert dim >= 0 and dim < len(self.system_dimensions)
+                        assert n_bits == self.system_dimensions[dim]
+                        
+
+                else:
+                    assert boundary.dimension >= 0 and boundary.dimension < len(self.system_dimensions)
+                    assert boundary.n_bits == self.system_dimensions[boundary.dimension]
             if (boundary_control.ctrl is not None or type(boundary_control) == OneWayBoundaryControl) and type(boundary_control) != AbsorbingBoundaryControl:
                 self.boundary_control_registers.append(boundary_control.register)
         
@@ -116,6 +123,29 @@ class QuantumWalk:
         """Applys boundary condition to environment specified by `boundary`"""
 
         for boundary in boundary_control.boundaries:
+
+
+            if type(boundary)==Obstruction:
+                registers = [self.state_registers[dim] for dim in boundary.dimensions]
+                n_control_bits = sum([reg.size for reg in registers]) + boundary_control.ctrl_size
+                ctrl_state = "".join(boundary.bitstrings) + boundary_control.ctrl_state
+                DReversalGate = self.shift_coin.DReversalGate.control(n_control_bits,ctrl_state=ctrl_state, label = boundary.label)
+                Inverse_coin_gate = self.shift_coin.control(n_control_bits,ctrl_state=ctrl_state, inverse = True, label = boundary.label)
+
+                state_qubits = []
+                for reg in registers:
+                    state_qubits.extend(reg[:])
+
+                if boundary_control.register:
+                    self.quantum_circuit.append(Inverse_coin_gate,boundary_control.register[:]+state_qubits+self.shift_coin_register[:])
+                    self.quantum_circuit.append(DReversalGate,boundary_control.register[:]+state_qubits+self.shift_coin_register[:])
+
+                else:  
+                    self.quantum_circuit.append(Inverse_coin_gate,state_qubits+self.shift_coin_register[:])
+                    self.quantum_circuit.append(DReversalGate,state_qubits+self.shift_coin_register[:])
+                
+                continue
+
 
             register = self.state_registers[boundary.dimension]
             n_control_bits = register.size + boundary_control.ctrl_size
