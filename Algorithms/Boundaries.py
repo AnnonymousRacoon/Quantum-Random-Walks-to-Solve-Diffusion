@@ -1,6 +1,33 @@
 from qiskit import QuantumRegister
 from DiffusionProject.Algorithms.Coins import Coin, CylicController
+from DiffusionProject.Algorithms.Coins import AbsorbingControl
 
+class Obstruction:
+    """Represents a single obstructive point in  lattice"""
+
+    def __init__(self, bitstrings: list, dimensions:list, label=None) -> None:
+        assert len(bitstrings)==len(dimensions), "The number of bitstrings must equal the number of dimensions"
+        self._bitstrings = bitstrings
+        self._dimensions = dimensions
+        self._label = label
+
+    @property
+    def n_bits(self) -> list:
+        """The length of the boundary bitstring"""
+        return [len(bitstring) for bitstring in self._bitstrings]
+
+    @property
+    def dimensions(self) -> list:
+        return self._dimensions
+
+    @property
+    def bitstrings(self)-> list:
+        return self._bitstrings
+
+    @property
+    def label(self) -> str:
+        return self._label
+        
 class Boundary:
     """Represents a single boundary plane in a quantum walk algorithm"""
 
@@ -26,6 +53,8 @@ class Boundary:
     @property
     def label(self) -> str:
         return self._label
+
+
 
 
 class BoundaryControl:
@@ -104,8 +133,13 @@ class BoundaryControl:
 
 
 
+class AbsorbingBoundaryControl(BoundaryControl):
+    def __init__(self, ctrl_state=None, n_resets=2, label=None) -> None:
+        ctrl = AbsorbingControl()
+        super().__init__(ctrl, ctrl_state, n_resets, label)
 
-    
+    def reset_register(self,circuit):
+        pass
 
 
 
