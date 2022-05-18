@@ -3,8 +3,8 @@ import math
 from qiskit import QuantumCircuit, QuantumRegister, transpile, assemble
 from qiskit.tools.visualization import circuit_drawer
 import pandas as pd
-from DiffusionProject.Algorithms.Coins import HadamardCoin, CylicController, AbsorbingControl
-from DiffusionProject.Algorithms.Boundaries import Boundary, OneWayBoundaryControl, BoundaryControl, AbsorbingBoundaryControl, Obstruction
+from DiffusionProject.Algorithms.Coins import HadamardCoin, CylicController, AbsorbingControl, XCoin
+from DiffusionProject.Algorithms.Boundaries import Boundary, BoundaryControl, AbsorbingBoundaryControl, Obstruction, ControlledDirectionalBoundaryControl, UniDirectionalBoundaryControl
 
 from DiffusionProject.Backends.backend import Backend
 from DiffusionProject.Algorithms.Decoherence import CoinDecoherenceCycle
@@ -42,19 +42,35 @@ class QuantumWalk:
         # initialise boundary control registers:
         self.boundary_controls = boundary_controls
         self.boundary_control_registers = []
+        self.ancilla_registers = []
+
+        self.absorption_register = None
         for boundary_control in self.boundary_controls:
             for boundary in boundary_control.boundaries:
+
+                # For obstruction check both dims
                 if type(boundary) == Obstruction:
                     for dim, n_bits in zip(boundary.dimensions, boundary.n_bits):
                         assert dim >= 0 and dim < len(self.system_dimensions)
                         assert n_bits == self.system_dimensions[dim]
                         
-
+                # for other boundaries check single dim
                 else:
                     assert boundary.dimension >= 0 and boundary.dimension < len(self.system_dimensions)
                     assert boundary.n_bits == self.system_dimensions[boundary.dimension]
-            if (boundary_control.ctrl is not None or type(boundary_control) == OneWayBoundaryControl) and type(boundary_control) != AbsorbingBoundaryControl:
+            if boundary_control.ctrl is not None and type(boundary_control) != AbsorbingBoundaryControl:
                 self.boundary_control_registers.append(boundary_control.register)
+
+            if boundary_control.ancilla_register:
+                self.ancilla_registers.append(boundary_control.ancilla_register)
+
+            # add absorbing ancilla
+            if type(boundary_control) == AbsorbingBoundaryControl:
+                self.absorption_register = QuantumRegister(1,"absorption")
+
+        if self.absorption_register:
+            self.ancilla_registers.append(self.absorption_register)
+
         
         # initialise coin
         if coin_class == None:
@@ -64,7 +80,7 @@ class QuantumWalk:
 
         # initialise Quantum Registers
         self.shift_coin_register = QuantumRegister( self.n_shift_coin_bits,"coin")
-        self.absorption_register = QuantumRegister(1,"absorption")
+        
         # self.state_register = QuantumRegister(self.n_state_bits,"state")
         # self.logic_register = QuantumRegister(self.n_logic_bits,"logic")
 
@@ -95,11 +111,12 @@ class QuantumWalk:
         self.quantum_circuit.u(pi/2,pi/2,3*pi/2,self.shift_coin_register[:])
 
     def build_ciruit(self) -> None:
-        self.quantum_circuit = QuantumCircuit(self.shift_coin_register,self.absorption_register,*self.boundary_control_registers,*self.state_registers)
+        self.quantum_circuit = QuantumCircuit(self.shift_coin_register,*self.ancilla_registers,*self.boundary_control_registers,*self.state_registers)
 
     def step(self) -> None:
         """Adds one more step to the quantum walk"""
         self.reset_absorption_register()
+        self.update_boundary_ancillas()
 
     def decohere_coin(self, step_idx) -> None:
         """decoheres the coin at selected qubits"""
@@ -117,10 +134,54 @@ class QuantumWalk:
         for step_idx in range(n_steps):
             self.step()
             self.decohere_coin(step_idx)
+    
+    def update_boundary_ancillas(self):
+        for boundary_control in self.boundary_controls:
+            if not (type(boundary_control) == UniDirectionalBoundaryControl or type(boundary_control)==ControlledDirectionalBoundaryControl):
+                continue
 
+            boundary_control.reset_ancilla_register(self.quantum_circuit)
+            for boundary in boundary_control.boundaries:
+                register = self.state_registers[boundary.dimension]
+                # add one for ancilla
+                n_control_bits = register.size + 1
+                ctrl_state = boundary.bitstring
+
+                ancilla_register = boundary_control.ancilla_register
+
+                for ancilla_idx in range(2):
+                    # Dreversal gate is just mct. here we apply to the ancilla qubit
+                    ancilla_activation_state = ctrl_state + str(ancilla_idx)
+                    ancilla_activator = boundary_control.x.control(n_control_bits,ctrl_state=ancilla_activation_state, label = boundary.label)
+                    self.quantum_circuit.append(ancilla_activator,[self.shift_coin_register[-1]]+register[:]+[ancilla_register[ancilla_idx]])
+
+    def apply_controlled_directional_boundary(self, boundary_control : BoundaryControl):
+        for boundary in boundary_control.boundaries:
+            ancilla_register = boundary_control.ancilla_register
+
+            # need to refactor this
+            n_control_bits = 2
+            ctrl_state = "11"
+            DReversalGate = self.shift_coin.DReversalGate.control(n_control_bits,ctrl_state=ctrl_state, label = boundary.label)
+            Inverse_coin_gate = self.shift_coin.control(1,ctrl_state="1", inverse = True, label = boundary.label)
+
+            for direction_idx in range(2):
+                self.quantum_circuit.append(Inverse_coin_gate,[ancilla_register[direction_idx]]+self.shift_coin_register[:])
+                self.quantum_circuit.append(DReversalGate,[boundary_control.register[direction_idx]]+[ancilla_register[direction_idx]]+self.shift_coin_register[:])
+
+
+    def apply_unidirectional_boundary(self, boundary_control : BoundaryControl):
+        pass
 
     def apply_boundary(self,boundary_control : BoundaryControl):
         """Applys boundary condition to environment specified by `boundary`"""
+        if (type(boundary_control)==ControlledDirectionalBoundaryControl):
+            self.apply_controlled_directional_boundary(boundary_control)
+            return
+        if type(boundary_control) == UniDirectionalBoundaryControl:
+            self.apply_unidirectional_boundary(boundary_control)
+            return
+
 
         for boundary in boundary_control.boundaries:
 
@@ -156,32 +217,13 @@ class QuantumWalk:
             Inverse_coin_gate = self.shift_coin.control(n_control_bits,ctrl_state=ctrl_state, inverse = True, label = boundary.label)
 
 
-
-            if type(boundary_control) == OneWayBoundaryControl:
-                n_control_bits = register.size
-                ctrl_state = boundary.bitstring
-                Inverse_coin_gate = self.shift_coin.control(n_control_bits,ctrl_state=ctrl_state, inverse = True, label = boundary.label)
-                
-                DRestorationGate = self.shift_coin.DReversalGate.control(n_control_bits,ctrl_state=ctrl_state, label = boundary.label)
-                CyclicControlGate = boundary_control.ctrl.control(n_control_bits,ctrl_state=ctrl_state,label = boundary.label)
-                
-                
-                self.quantum_circuit.append(Inverse_coin_gate,register[:]+self.shift_coin_register[:])
-                
-                self.quantum_circuit.append(CyclicControlGate,register[:]+boundary_control.register[:])
-                self.quantum_circuit.append(DRestorationGate,register[:]+self.shift_coin_register[:])
-                
-                self.quantum_circuit.append(DReversalGate,boundary_control.register[:]+register[:]+self.shift_coin_register[:])
-
-
-            elif type(boundary_control) == AbsorbingBoundaryControl:
+            if type(boundary_control) == AbsorbingBoundaryControl:
 
                 n_control_bits = register.size
                 ctrl_state = boundary.bitstring
                 AbsorptionControlGate = boundary_control.ctrl.control(n_control_bits,ctrl_state=ctrl_state,label = boundary.label)
                 self.quantum_circuit.append(AbsorptionControlGate,register[:]+self.absorption_register[:])
 
-   
             elif boundary_control.register:
                 self.quantum_circuit.append(Inverse_coin_gate,boundary_control.register[:]+register[:]+self.shift_coin_register[:])
                 self.quantum_circuit.append(DReversalGate,boundary_control.register[:]+register[:]+self.shift_coin_register[:])
@@ -215,6 +257,8 @@ class QuantumWalk:
             boundary.reset_register(self.quantum_circuit)
 
     def reset_absorption_register(self):
+        if self.absorption_register is None:
+            return None
         self.quantum_circuit.reset(self.absorption_register[:])
         self.quantum_circuit.x(self.absorption_register[:])
 
@@ -226,7 +270,12 @@ class QuantumWalk:
         n_register_bits = register.size
         # Apply sequential CX gates
         for idx in range(n_register_bits):
-            self.quantum_circuit.mct(self.shift_coin_register[:]+self.absorption_register[:]+register[:idx],register[idx])
+            if self.absorption_register:
+                self.quantum_circuit.mct(self.shift_coin_register[:]+self.absorption_register[:]+register[:idx],register[idx])
+            else:
+                self.quantum_circuit.mct(self.shift_coin_register[:]+register[:idx],register[idx])
+
+            
         # readability barrier
         self.quantum_circuit.barrier()
 
@@ -236,7 +285,10 @@ class QuantumWalk:
         n_register_bits = register.size
         # Apply sequential CX gates
         for idx in range(n_register_bits)[::-1]:
-            self.quantum_circuit.mct(self.shift_coin_register[:]+self.absorption_register[:]+register[:idx],register[idx])
+            if self.absorption_register:
+                self.quantum_circuit.mct(self.shift_coin_register[:]+self.absorption_register[:]+register[:idx],register[idx])
+            else:
+                self.quantum_circuit.mct(self.shift_coin_register[:]+register[:idx],register[idx])
         # readability barrier
         self.quantum_circuit.barrier()
 

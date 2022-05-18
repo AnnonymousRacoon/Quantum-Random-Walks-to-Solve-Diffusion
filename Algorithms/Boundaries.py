@@ -1,5 +1,6 @@
-from qiskit import QuantumRegister
-from DiffusionProject.Algorithms.Coins import Coin, CylicController
+import numpy as np
+from qiskit import QuantumRegister, QuantumCircuit
+from DiffusionProject.Algorithms.Coins import Coin, SU2Coin
 from DiffusionProject.Algorithms.Coins import AbsorbingControl
 
 class Obstruction:
@@ -68,6 +69,7 @@ class BoundaryControl:
         self._n_resets = n_resets
         self._ctrl = ctrl
         self._label = label
+        self._ancilla_register = None
 
         if ctrl is not None:
             self._ctrl_size = ctrl.n_qubits
@@ -103,6 +105,11 @@ class BoundaryControl:
             for _ in range(self._n_resets):
                 circuit.reset(self._register[qubit_idx])
 
+    def reset_ancilla_register(self,circuit):
+        for qubit_idx in range(self._ancilla_register.size):
+            for _ in range(self._n_resets):
+                circuit.reset(self._ancilla_register[qubit_idx])
+
     @property
     def boundaries(self):
         return self._boundaries[:]
@@ -114,6 +121,10 @@ class BoundaryControl:
     @property
     def register(self) -> QuantumRegister:
         return self._register
+
+    @property
+    def ancilla_register(self) -> QuantumRegister:
+        return self._ancilla_register
 
     @property
     def ctrl_state(self) -> str:
@@ -131,6 +142,37 @@ class BoundaryControl:
     def is_permeable(self):
         return self._ctrl != None
 
+    @property
+    def x(self):
+        qc = QuantumCircuit(1)
+        qc.x(-1)
+        directional_reversal_gate = qc.to_gate(label = "mct")
+        return directional_reversal_gate
+
+class ControlledDirectionalBoundaryControl(BoundaryControl):
+    def __init__(self, ctrl: Coin = None, probabilities = None, ctrl_state=None, n_resets=2, label=None) -> None:
+        if ctrl is None:
+            assert type(probabilities) == list and len(probabilities) == 2
+            assert not any([p <0 and p>1 for p in probabilities])
+            thetas = [np.arccos(p**0.5) for p in probabilities]
+            ctrl = SU2Coin(2,thetas,0,0)
+        else:
+            assert ctrl != None
+            assert ctrl.n_qubits == 2, "Control coin must have two qubits"
+        super().__init__(ctrl, ctrl_state, n_resets, label)
+        self._ancilla_register = QuantumRegister(2,"directional ancilla")
+
+
+class UniDirectionalBoundaryControl(BoundaryControl):
+    def __init__(self, ctrl: Coin, ctrl_state=None, n_resets=2, label=None) -> None:
+        ctrl = None
+        super().__init__(ctrl, ctrl_state, n_resets, label)
+        self._ancilla_register = QuantumRegister(2,"directional ancilla")
+
+
+
+
+
 
 
 class AbsorbingBoundaryControl(BoundaryControl):
@@ -144,10 +186,3 @@ class AbsorbingBoundaryControl(BoundaryControl):
 
 
 
-class OneWayBoundaryControl(BoundaryControl):
-
-    def __init__(self,bitstring, dimension = 0, ctrl_state=None,n_control_qubits = 4, n_resets=2, label=None) -> None:
-        ctrl = CylicController(n_qubits=n_control_qubits)
-        super().__init__(ctrl, ctrl_state, n_resets, label)
-        boundary = Boundary(bitstring,dimension, label)
-        self.add_boundary(boundary)
