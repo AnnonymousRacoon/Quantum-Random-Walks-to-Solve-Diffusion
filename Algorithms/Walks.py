@@ -3,7 +3,7 @@ import math
 from qiskit import QuantumCircuit, QuantumRegister, transpile, assemble
 from qiskit.tools.visualization import circuit_drawer
 import pandas as pd
-from DiffusionProject.Algorithms.Coins import HadamardCoin, CylicController, AbsorbingControl, XCoin
+from DiffusionProject.Algorithms.Coins import HadamardCoin, CylicController, AbsorbingControl
 from DiffusionProject.Algorithms.Boundaries import Boundary, BoundaryControl, AbsorbingBoundaryControl, Obstruction, ControlledDirectionalBoundaryControl, UniDirectionalBoundaryControl
 
 from DiffusionProject.Backends.backend import Backend
@@ -172,6 +172,15 @@ class QuantumWalk:
 
     def apply_unidirectional_boundary(self, boundary_control : BoundaryControl):
         pass
+        # for boundary in boundary_control.boundaries:
+        #     ancilla_register = boundary_control.ancilla_register
+
+        #     DReversalGate = self.shift_coin.DReversalGate.control(1,ctrl_state="1", label = boundary.label)
+        #     Inverse_coin_gate = self.shift_coin.control(1,ctrl_state="1", inverse = True, label = boundary.label)
+
+        #     for direction_idx in range(2):
+        #         self.quantum_circuit.append(Inverse_coin_gate,[ancilla_register[direction_idx]]+self.shift_coin_register[:])
+        #         self.quantum_circuit.append(DReversalGate,[boundary_control.register[direction_idx]]+[ancilla_register[direction_idx]]+self.shift_coin_register[:])
 
     def apply_boundary(self,boundary_control : BoundaryControl):
         """Applys boundary condition to environment specified by `boundary`"""
@@ -214,7 +223,12 @@ class QuantumWalk:
 
             # construct boundary logic
             DReversalGate = self.shift_coin.DReversalGate.control(n_control_bits,ctrl_state=ctrl_state, label = boundary.label)
-            Inverse_coin_gate = self.shift_coin.control(n_control_bits,ctrl_state=ctrl_state, inverse = True, label = boundary.label)
+
+            if boundary_control.d_filter:
+                Inverse_coin_gate = self.shift_coin.control(register.size,ctrl_state=boundary.bitstring, inverse = True, label = boundary.label)
+            else:
+                Inverse_coin_gate = self.shift_coin.control(n_control_bits,ctrl_state=ctrl_state, inverse = True, label = boundary.label)
+                
 
 
             if type(boundary_control) == AbsorbingBoundaryControl:
@@ -225,7 +239,10 @@ class QuantumWalk:
                 self.quantum_circuit.append(AbsorptionControlGate,register[:]+self.absorption_register[:])
 
             elif boundary_control.register:
-                self.quantum_circuit.append(Inverse_coin_gate,boundary_control.register[:]+register[:]+self.shift_coin_register[:])
+                if boundary_control.d_filter:
+                    self.quantum_circuit.append(Inverse_coin_gate,register[:]+self.shift_coin_register[:])
+                else:
+                    self.quantum_circuit.append(Inverse_coin_gate,boundary_control.register[:]+register[:]+self.shift_coin_register[:])
                 self.quantum_circuit.append(DReversalGate,boundary_control.register[:]+register[:]+self.shift_coin_register[:])
 
             else:

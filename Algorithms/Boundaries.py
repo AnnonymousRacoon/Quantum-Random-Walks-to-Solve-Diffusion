@@ -63,8 +63,9 @@ class BoundaryControl:
     Controls One or More Boundaries
     """
     
-    def __init__(self, ctrl: Coin = None, ctrl_state = None, n_resets = 2, label = None) -> None:
+    def __init__(self, ctrl: Coin = None, ctrl_state = None, n_resets = 2, label = None, d_filter = False) -> None:
 
+        self._d_filter = d_filter
         self._boundaries = []
         self._n_resets = n_resets
         self._ctrl = ctrl
@@ -143,6 +144,10 @@ class BoundaryControl:
         return self._ctrl != None
 
     @property
+    def d_filter(self):
+        return self._d_filter
+
+    @property
     def x(self):
         qc = QuantumCircuit(1)
         qc.x(-1)
@@ -159,15 +164,22 @@ class ControlledDirectionalBoundaryControl(BoundaryControl):
         else:
             assert ctrl != None
             assert ctrl.n_qubits == 2, "Control coin must have two qubits"
-        super().__init__(ctrl, ctrl_state, n_resets, label)
+        super().__init__(ctrl, ctrl_state, n_resets, label, d_filter=True)
         self._ancilla_register = QuantumRegister(2,"directional ancilla")
 
 
 class UniDirectionalBoundaryControl(BoundaryControl):
-    def __init__(self, ctrl: Coin, ctrl_state=None, n_resets=2, label=None) -> None:
+    def __init__(self, direction: str, ctrl: Coin, ctrl_state=None, n_resets=2, label=None) -> None:
         ctrl = None
-        super().__init__(ctrl, ctrl_state, n_resets, label)
+        assert direction.lower() in ["left","right",'l',"r"]
+        self._direction = direction
+        self._ancilla_idx = 0 if direction[0] == "r" else 1
+        super().__init__(ctrl, ctrl_state, n_resets, label, d_filter=True)
         self._ancilla_register = QuantumRegister(2,"directional ancilla")
+
+    @property
+    def ancilla_idx(self):
+        return self._ancilla_idx
 
 
 
