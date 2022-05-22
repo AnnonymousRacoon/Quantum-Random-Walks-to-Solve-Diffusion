@@ -4,7 +4,7 @@ from qiskit import QuantumCircuit, QuantumRegister, transpile, assemble
 from qiskit.tools.visualization import circuit_drawer
 import pandas as pd
 from DiffusionProject.Algorithms.Coins import HadamardCoin, CylicController, AbsorbingControl
-from DiffusionProject.Algorithms.Boundaries import Boundary, BoundaryControl, AbsorbingBoundaryControl, Obstruction, ControlledDirectionalBoundaryControl, UniDirectionalBoundaryControl, NonDisruptiveBoundaryControl
+from DiffusionProject.Algorithms.Boundaries import Boundary, BoundaryControl, AbsorbingBoundaryControl, Obstruction, ControlledDirectionalBoundaryControl, UniDirectionalBoundaryControl, NonDisruptiveBoundaryControl, EfficientBoundaryControl
 
 from DiffusionProject.Backends.backend import Backend
 from DiffusionProject.Algorithms.Decoherence import CoinDecoherenceCycle
@@ -200,7 +200,7 @@ class QuantumWalk:
         #         self.quantum_circuit.append(Inverse_coin_gate,[ancilla_register[direction_idx]]+self.shift_coin_register[:])
         #         self.quantum_circuit.append(DReversalGate,[boundary_control.register[direction_idx]]+[ancilla_register[direction_idx]]+self.shift_coin_register[:])
 
-    def apply_non_disruptive_boundary(self,boundary_control: BoundaryControl):
+    def apply_efficient_boundary(self,boundary_control: BoundaryControl):
         for boundary in boundary_control.boundaries:
             ancilla_register = boundary_control.ancilla_register
 
@@ -213,9 +213,15 @@ class QuantumWalk:
                 self.quantum_circuit.append(Inverse_coin_gate,[ancilla_register[:]]+self.shift_coin_register[:])
             else:
                 Inverse_coin_gate = self.shift_coin.control(n_control_bits,ctrl_state="1" + boundary_control.ctrl_state, inverse = True, label = boundary.label)
-                self.quantum_circuit.append(Inverse_coin_gate,[boundary_control.register[:]]+[ancilla_register[:]]+self.shift_coin_register[:])
+                if boundary_control.register:
+                    self.quantum_circuit.append(Inverse_coin_gate,[boundary_control.register[:]]+[ancilla_register[:]]+self.shift_coin_register[:])
+                else:
+                    self.quantum_circuit.append(Inverse_coin_gate,[ancilla_register[:]]+self.shift_coin_register[:])
+            if boundary_control.register:
+                self.quantum_circuit.append(DReversalGate,[boundary_control.register[:]]+[ancilla_register[:]]+self.shift_coin_register[:])
+            else:
+                self.quantum_circuit.append(DReversalGate,[ancilla_register[:]]+self.shift_coin_register[:])
 
-            self.quantum_circuit.append(DReversalGate,[boundary_control.register[:]]+[ancilla_register[:]]+self.shift_coin_register[:])
 
     def apply_non_disruptive_boundary_cleanup(self):
         for boundary_control in self.boundary_controls:
@@ -235,7 +241,10 @@ class QuantumWalk:
                         self.quantum_circuit.append(Inverse_coin_gate,[ancilla_register[:]]+self.shift_coin_register[:])
                     else:
                         Inverse_coin_gate = self.shift_coin.control(n_control_bits,ctrl_state="1" + boundary_control.ctrl_state, inverse = False, label = boundary.label)
-                        self.quantum_circuit.append(Inverse_coin_gate,[boundary_control.register[:]]+[ancilla_register[:]]+self.shift_coin_register[:])
+                        if boundary_control.register:
+                            self.quantum_circuit.append(Inverse_coin_gate,[boundary_control.register[:]]+[ancilla_register[:]]+self.shift_coin_register[:])
+                        else:
+                            self.quantum_circuit.append(Inverse_coin_gate,[ancilla_register[:]]+self.shift_coin_register[:])
 
                   
 
@@ -247,8 +256,8 @@ class QuantumWalk:
         if type(boundary_control) == UniDirectionalBoundaryControl:
             return self.apply_unidirectional_boundary(boundary_control)
 
-        if type(boundary_control)==NonDisruptiveBoundaryControl:
-            return self.apply_non_disruptive_boundary(boundary_control)
+        if type(boundary_control)==NonDisruptiveBoundaryControl or type(boundary_control)==EfficientBoundaryControl:
+            return self.apply_efficient_boundary(boundary_control)
 
 
         for boundary in boundary_control.boundaries:

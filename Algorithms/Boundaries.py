@@ -182,11 +182,17 @@ class UniDirectionalBoundaryControl(BoundaryControl):
         return self._ancilla_idx
 
 
+class EfficientBoundaryControl(BoundaryControl):
+    def __init__(self, ctrl: Coin = None, ctrl_state=None, n_resets=2, label=None, d_filter=False) -> None:
+        super().__init__(ctrl, ctrl_state, n_resets, label, d_filter)
+        self._ancilla_register = QuantumRegister(1,"efficient ancilla")
 
-class NonDisruptiveBoundaryControl(BoundaryControl):
+class NonDisruptiveBoundaryControl(EfficientBoundaryControl):
     def __init__(self, ctrl: Coin = None, ctrl_state=None, n_resets=2, label=None, d_filter=False) -> None:
         super().__init__(ctrl, ctrl_state, n_resets, label, d_filter)
         self._ancilla_register = QuantumRegister(1,"ndbc ancilla")
+
+
 
 
 
