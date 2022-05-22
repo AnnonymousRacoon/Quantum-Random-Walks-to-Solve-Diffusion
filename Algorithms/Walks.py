@@ -4,7 +4,7 @@ from qiskit import QuantumCircuit, QuantumRegister, transpile, assemble
 from qiskit.tools.visualization import circuit_drawer
 import pandas as pd
 from DiffusionProject.Algorithms.Coins import HadamardCoin, CylicController, AbsorbingControl
-from DiffusionProject.Algorithms.Boundaries import Boundary, BoundaryControl, AbsorbingBoundaryControl, Obstruction, ControlledDirectionalBoundaryControl, UniDirectionalBoundaryControl
+from DiffusionProject.Algorithms.Boundaries import Boundary, BoundaryControl, AbsorbingBoundaryControl, Obstruction, ControlledDirectionalBoundaryControl, UniDirectionalBoundaryControl, NonDisruptiveBoundaryControl
 
 from DiffusionProject.Backends.backend import Backend
 from DiffusionProject.Algorithms.Decoherence import CoinDecoherenceCycle
@@ -137,23 +137,33 @@ class QuantumWalk:
     
     def update_boundary_ancillas(self):
         for boundary_control in self.boundary_controls:
-            if not (type(boundary_control) == UniDirectionalBoundaryControl or type(boundary_control)==ControlledDirectionalBoundaryControl):
-                continue
+            if type(boundary_control) == UniDirectionalBoundaryControl or type(boundary_control)==ControlledDirectionalBoundaryControl:
+                boundary_control.reset_ancilla_register(self.quantum_circuit)
+                for boundary in boundary_control.boundaries:
+                    register = self.state_registers[boundary.dimension]
+                    # add one for ancilla
+                    n_control_bits = register.size + 1
+                    ctrl_state = boundary.bitstring
 
-            boundary_control.reset_ancilla_register(self.quantum_circuit)
-            for boundary in boundary_control.boundaries:
-                register = self.state_registers[boundary.dimension]
-                # add one for ancilla
-                n_control_bits = register.size + 1
-                ctrl_state = boundary.bitstring
+                    ancilla_register = boundary_control.ancilla_register
 
-                ancilla_register = boundary_control.ancilla_register
+                    for ancilla_idx in range(2):
+                        # Dreversal gate is just mct. here we apply to the ancilla qubit
+                        ancilla_activation_state = ctrl_state + str(ancilla_idx)
+                        ancilla_activator = boundary_control.x.control(n_control_bits,ctrl_state=ancilla_activation_state, label = boundary.label)
+                        self.quantum_circuit.append(ancilla_activator,[self.shift_coin_register[-1]]+register[:]+[ancilla_register[ancilla_idx]])
 
-                for ancilla_idx in range(2):
-                    # Dreversal gate is just mct. here we apply to the ancilla qubit
-                    ancilla_activation_state = ctrl_state + str(ancilla_idx)
+            elif type(boundary_control) == NonDisruptiveBoundaryControl:
+                boundary_control.reset_ancilla_register(self.quantum_circuit)
+                for boundary in boundary_control.boundaries:
+                    register = self.state_registers[boundary.dimension]
+                    # add one for ancilla
+                    n_control_bits = register.size
+                    ancilla_activation_state = boundary.bitstring
+                    ancilla_register = boundary_control.ancilla_register
                     ancilla_activator = boundary_control.x.control(n_control_bits,ctrl_state=ancilla_activation_state, label = boundary.label)
-                    self.quantum_circuit.append(ancilla_activator,[self.shift_coin_register[-1]]+register[:]+[ancilla_register[ancilla_idx]])
+                    self.quantum_circuit.append(ancilla_activator,register[:]+[ancilla_register[:]])
+
 
     def apply_controlled_directional_boundary(self, boundary_control : BoundaryControl):
         for boundary in boundary_control.boundaries:
@@ -163,10 +173,18 @@ class QuantumWalk:
             n_control_bits = 2
             ctrl_state = "11"
             DReversalGate = self.shift_coin.DReversalGate.control(n_control_bits,ctrl_state=ctrl_state, label = boundary.label)
-            Inverse_coin_gate = self.shift_coin.control(1,ctrl_state="1", inverse = True, label = boundary.label)
+
+            if boundary_control.d_filter:
+                Inverse_coin_gate = self.shift_coin.control(1,ctrl_state="1", inverse = True, label = boundary.label)
+            else:
+                Inverse_coin_gate = self.shift_coin.control(n_control_bits,ctrl_state=ctrl_state, inverse = True, label = boundary.label)
 
             for direction_idx in range(2):
-                self.quantum_circuit.append(Inverse_coin_gate,[ancilla_register[direction_idx]]+self.shift_coin_register[:])
+                if boundary_control.d_filter:
+                    self.quantum_circuit.append(Inverse_coin_gate,[ancilla_register[direction_idx]]+self.shift_coin_register[:])
+                else:
+                    self.quantum_circuit.append(Inverse_coin_gate,[boundary_control.register[direction_idx]]+[ancilla_register[direction_idx]]+self.shift_coin_register[:])
+
                 self.quantum_circuit.append(DReversalGate,[boundary_control.register[direction_idx]]+[ancilla_register[direction_idx]]+self.shift_coin_register[:])
 
 
@@ -182,14 +200,55 @@ class QuantumWalk:
         #         self.quantum_circuit.append(Inverse_coin_gate,[ancilla_register[direction_idx]]+self.shift_coin_register[:])
         #         self.quantum_circuit.append(DReversalGate,[boundary_control.register[direction_idx]]+[ancilla_register[direction_idx]]+self.shift_coin_register[:])
 
+    def apply_non_disruptive_boundary(self,boundary_control: BoundaryControl):
+        for boundary in boundary_control.boundaries:
+            ancilla_register = boundary_control.ancilla_register
+
+            ctrl_state = "1" + boundary_control.ctrl_state
+            n_control_bits = boundary_control.ctrl_size+1
+
+            DReversalGate = self.shift_coin.DReversalGate.control(n_control_bits,ctrl_state=ctrl_state , label = boundary.label)
+            if boundary_control.d_filter:
+                Inverse_coin_gate = self.shift_coin.control(boundary_control.ctrl_size,ctrl_state=boundary_control.ctrl_state, inverse = True, label = boundary.label)
+                self.quantum_circuit.append(Inverse_coin_gate,[ancilla_register[:]]+self.shift_coin_register[:])
+            else:
+                Inverse_coin_gate = self.shift_coin.control(n_control_bits,ctrl_state="1" + boundary_control.ctrl_state, inverse = True, label = boundary.label)
+                self.quantum_circuit.append(Inverse_coin_gate,[boundary_control.register[:]]+[ancilla_register[:]]+self.shift_coin_register[:])
+
+            self.quantum_circuit.append(DReversalGate,[boundary_control.register[:]]+[ancilla_register[:]]+self.shift_coin_register[:])
+
+    def apply_non_disruptive_boundary_cleanup(self):
+        for boundary_control in self.boundary_controls:
+            if type(boundary_control) == NonDisruptiveBoundaryControl:
+                for boundary in boundary_control.boundaries:
+                    ancilla_register = boundary_control.ancilla_register
+
+                    ctrl_state = "1" + boundary_control.ctrl_state
+                    n_control_bits = boundary_control.ctrl_size+1
+
+                    # DReversalGate = self.shift_coin.DReversalGate.control(n_control_bits,ctrl_state=ctrl_state , label = boundary.label)
+                    # self.quantum_circuit.append(DReversalGate,[boundary_control.register[:]]+[ancilla_register[:]]+self.shift_coin_register[:])
+
+
+                    if boundary_control.d_filter:
+                        Inverse_coin_gate = self.shift_coin.control(boundary_control.ctrl_size,ctrl_state=boundary_control.ctrl_state, inverse = False, label = boundary.label)
+                        self.quantum_circuit.append(Inverse_coin_gate,[ancilla_register[:]]+self.shift_coin_register[:])
+                    else:
+                        Inverse_coin_gate = self.shift_coin.control(n_control_bits,ctrl_state="1" + boundary_control.ctrl_state, inverse = False, label = boundary.label)
+                        self.quantum_circuit.append(Inverse_coin_gate,[boundary_control.register[:]]+[ancilla_register[:]]+self.shift_coin_register[:])
+
+                  
+
     def apply_boundary(self,boundary_control : BoundaryControl):
         """Applys boundary condition to environment specified by `boundary`"""
         if (type(boundary_control)==ControlledDirectionalBoundaryControl):
-            self.apply_controlled_directional_boundary(boundary_control)
-            return
+            return self.apply_controlled_directional_boundary(boundary_control)
+            
         if type(boundary_control) == UniDirectionalBoundaryControl:
-            self.apply_unidirectional_boundary(boundary_control)
-            return
+            return self.apply_unidirectional_boundary(boundary_control)
+
+        if type(boundary_control)==NonDisruptiveBoundaryControl:
+            return self.apply_non_disruptive_boundary(boundary_control)
 
 
         for boundary in boundary_control.boundaries:
@@ -272,6 +331,12 @@ class QuantumWalk:
     def reset_boundaries(self):
         for boundary in self.boundary_controls:
             boundary.reset_register(self.quantum_circuit)
+
+    def apply_post_shift_operations(self):
+        self.apply_non_disruptive_boundary_cleanup()
+
+
+
 
     def reset_absorption_register(self):
         if self.absorption_register is None:
@@ -565,6 +630,7 @@ class QuantumWalk3D(QuantumWalk):
         # dimension 2
         self.wrap_shift(operator = self.add_left_shift,coin_bitstring = "110",dimension=2)
         self.wrap_shift(operator = self.add_right_shift,coin_bitstring = "010",dimension=2)
+        self.apply_post_shift_operations()
         self.reset_boundaries()
 
 class QuantumWalk2D(QuantumWalk):
@@ -583,6 +649,7 @@ class QuantumWalk2D(QuantumWalk):
         # dimension 1
         self.wrap_shift(operator = self.add_left_shift,coin_bitstring = "11",dimension=1)
         self.wrap_shift(operator = self.add_right_shift,coin_bitstring = "01",dimension=1)
+        self.apply_post_shift_operations()
         self.reset_boundaries()
 
     def initialise_symetric_coin_register(self):
@@ -607,6 +674,7 @@ class QuantumWalk1D(QuantumWalk):
         # dimension 0
         self.wrap_shift(operator = self.add_left_shift,coin_bitstring = "1",dimension=0)
         self.wrap_shift(operator = self.add_right_shift,coin_bitstring = "0",dimension=0)
+        self.apply_post_shift_operations()
         self.reset_boundaries()
 
 class QuantumWalk2DIndependant(QuantumWalk):
@@ -630,4 +698,5 @@ class QuantumWalk2DIndependant(QuantumWalk):
         self.wrap_shift(operator = self.add_left_shift,coin_bitstring = "10",dimension=1)
         self.wrap_shift(operator = self.add_right_shift,coin_bitstring = "11",dimension=1)
         self.wrap_shift(operator = self.add_right_shift,coin_bitstring = "01",dimension=1)
+        self.apply_post_shift_operations()
         self.reset_boundaries()

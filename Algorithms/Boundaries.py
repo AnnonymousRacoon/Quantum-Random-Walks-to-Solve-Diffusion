@@ -75,7 +75,7 @@ class BoundaryControl:
         if ctrl is not None:
             self._ctrl_size = ctrl.n_qubits
             register_name = "{} control".format(label)
-            self._register = QuantumRegister(self._ctrl_size,register_name) if label else QuantumRegister(self._ctrl_size) 
+            self._register = QuantumRegister(self._ctrl_size,register_name) if label else QuantumRegister(self._ctrl_size, "boundary control") 
         else:
             self._ctrl_size = 0
             self._register = None
@@ -155,7 +155,7 @@ class BoundaryControl:
         return directional_reversal_gate
 
 class ControlledDirectionalBoundaryControl(BoundaryControl):
-    def __init__(self, ctrl: Coin = None, probabilities = None, ctrl_state=None, n_resets=2, label=None) -> None:
+    def __init__(self, ctrl: Coin = None, probabilities = None, ctrl_state=None, n_resets=2, label=None, d_filter = False) -> None:
         if ctrl is None:
             assert type(probabilities) == list and len(probabilities) == 2
             assert not any([p <0 and p>1 for p in probabilities])
@@ -164,17 +164,17 @@ class ControlledDirectionalBoundaryControl(BoundaryControl):
         else:
             assert ctrl != None
             assert ctrl.n_qubits == 2, "Control coin must have two qubits"
-        super().__init__(ctrl, ctrl_state, n_resets, label, d_filter=True)
+        super().__init__(ctrl, ctrl_state, n_resets, label, d_filter)
         self._ancilla_register = QuantumRegister(2,"directional ancilla")
 
 
 class UniDirectionalBoundaryControl(BoundaryControl):
-    def __init__(self, direction: str, ctrl: Coin, ctrl_state=None, n_resets=2, label=None) -> None:
+    def __init__(self, direction: str, ctrl: Coin, ctrl_state=None, n_resets=2, label=None,  d_filter=False) -> None:
         ctrl = None
         assert direction.lower() in ["left","right",'l',"r"]
         self._direction = direction
         self._ancilla_idx = 0 if direction[0] == "r" else 1
-        super().__init__(ctrl, ctrl_state, n_resets, label, d_filter=True)
+        super().__init__(ctrl, ctrl_state, n_resets, label, d_filter)
         self._ancilla_register = QuantumRegister(2,"directional ancilla")
 
     @property
@@ -183,7 +183,10 @@ class UniDirectionalBoundaryControl(BoundaryControl):
 
 
 
-
+class NonDisruptiveBoundaryControl(BoundaryControl):
+    def __init__(self, ctrl: Coin = None, ctrl_state=None, n_resets=2, label=None, d_filter=False) -> None:
+        super().__init__(ctrl, ctrl_state, n_resets, label, d_filter)
+        self._ancilla_register = QuantumRegister(1,"ndbc ancilla")
 
 
 
