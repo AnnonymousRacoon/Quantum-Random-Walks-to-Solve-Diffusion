@@ -403,8 +403,8 @@ class QuantumWalk:
         indices = []
         last_idx = 0
 
-        for idx, dimension_len in enumerate (self.system_dimensions[::-1]):
-            dimension_start_idx = sum(self.system_dimensions[:idx])
+        for idx, dimension_len in reversed(list(enumerate (self.system_dimensions))):
+            dimension_start_idx = sum(self.system_dimensions[idx:-1])
             dimension_end_idx = dimension_start_idx + dimension_len - 1
             indices.append({
                 "dimension" : idx,
