@@ -63,7 +63,7 @@ class QuantumWalk:
 
             if boundary_control.ancilla_register:
                 ancilla_idx = len(self.ancilla_registers)
-                boundary_control.ancilla_register._name += f"{ancilla_idx}"
+                boundary_control.init_ancilla_with_idx(ancilla_idx)
                 self.ancilla_registers.append(boundary_control.ancilla_register)
 
             # add absorbing ancilla
@@ -404,7 +404,7 @@ class QuantumWalk:
         last_idx = 0
 
         for idx, dimension_len in reversed(list(enumerate (self.system_dimensions))):
-            dimension_start_idx = sum(self.system_dimensions[idx:-1])
+            dimension_start_idx = sum(self.system_dimensions[idx+1:])
             dimension_end_idx = dimension_start_idx + dimension_len - 1
             indices.append({
                 "dimension" : idx,
