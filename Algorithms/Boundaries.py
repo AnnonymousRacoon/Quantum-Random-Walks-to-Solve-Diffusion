@@ -154,18 +154,13 @@ class BoundaryControl:
         directional_reversal_gate = qc.to_gate(label = "mct")
         return directional_reversal_gate
 
-class ControlledDirectionalBoundaryControl(BoundaryControl):
-    def __init__(self, ctrl: Coin = None, probabilities = None, ctrl_state=None, n_resets=2, label=None, d_filter = False) -> None:
-        if ctrl is None:
-            assert type(probabilities) == list and len(probabilities) == 2
-            assert not any([p <0 and p>1 for p in probabilities])
-            thetas = [np.arccos(p**0.5) for p in probabilities]
-            ctrl = SU2Coin(2,thetas,0,0)
-        else:
-            assert ctrl != None
-            assert ctrl.n_qubits == 2, "Control coin must have two qubits"
-        super().__init__(ctrl, ctrl_state, n_resets, label, d_filter)
-        self._ancilla_register = QuantumRegister(2,"directional ancilla")
+    def init_register_with_idx(self,idx):
+        name = self.register.name + str(idx)
+        self.init_register(name)
+    
+    def init_register(self,name = None):
+        self._register = QuantumRegister(self._ctrl_size, name)
+
 
 
 class UniDirectionalBoundaryControl(BoundaryControl):
@@ -198,6 +193,27 @@ class NonDisruptiveBoundaryControl(EfficientBoundaryControl):
     def __init__(self, ctrl: Coin = None, ctrl_state=None, n_resets=2, label=None, d_filter=False) -> None:
         super().__init__(ctrl, ctrl_state, n_resets, label, d_filter)
         self._ancilla_register = QuantumRegister(1,"ndbc ancilla")
+
+class ControlledDirectionalBoundaryControl(BoundaryControl):
+    def __init__(self, ctrl: Coin = None, probabilities = None, ctrl_state=None, n_resets=2, label=None, d_filter = False) -> None:
+        if ctrl is None:
+            assert type(probabilities) == list and len(probabilities) == 2
+            assert not any([p <0 and p>1 for p in probabilities])
+            thetas = [np.arccos(p**0.5) for p in probabilities]
+            ctrl = SU2Coin(2,thetas,0,0)
+        else:
+            assert ctrl != None
+            assert ctrl.n_qubits == 2, "Control coin must have two qubits"
+        super().__init__(ctrl, ctrl_state, n_resets, label, d_filter)
+        self._ancilla_register = QuantumRegister(2,"directional ancilla")
+
+    def init_ancilla(self,name = None):
+        self._ancilla_register = QuantumRegister(2,name)
+
+    def init_ancilla_with_idx(self,idx):
+        name = self._ancilla_register.name + str(idx)
+        self.init_ancilla(name)
+
 
 
 

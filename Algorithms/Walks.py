@@ -60,6 +60,8 @@ class QuantumWalk:
                     assert boundary.dimension >= 0 and boundary.dimension < len(self.system_dimensions)
                     assert boundary.n_bits == self.system_dimensions[boundary.dimension]
             if boundary_control.ctrl is not None and type(boundary_control) != AbsorbingBoundaryControl:
+                boundary_register_idx = len(self.boundary_control_registers)
+                boundary_control.init_register_with_idx(boundary_register_idx)
                 self.boundary_control_registers.append(boundary_control.register)
 
             if boundary_control.ancilla_register:
@@ -162,6 +164,8 @@ class QuantumWalk:
                         ancilla_activation_state = ctrl_state + str(ancilla_idx)
                         ancilla_activator = boundary_control.x.control(n_control_bits,ctrl_state=ancilla_activation_state, label = boundary.label)
                         self.quantum_circuit.append(ancilla_activator,[self.shift_coin_register[-1]]+register[:]+[ancilla_register[ancilla_idx]])
+                
+                continue
 
             elif type(boundary_control) == NonDisruptiveBoundaryControl or type(boundary_control) == EfficientBoundaryControl:
                 boundary_control.reset_ancilla_register(self.quantum_circuit)
