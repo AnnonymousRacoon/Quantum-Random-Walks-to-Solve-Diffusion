@@ -8,13 +8,14 @@ from DiffusionProject.Algorithms.Boundaries import Boundary, BoundaryControl, Ab
 
 from DiffusionProject.Backends.backend import Backend
 from DiffusionProject.Algorithms.Decoherence import CoinDecoherenceCycle
+from DiffusionProject.Algorithms.Initialisers import SymetricInitialiser
 
 from numpy import pi
 
     
 class QuantumWalk:
 
-    def __init__(self,backend: Backend ,system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class = None, coin_kwargs = {}, boundary_controls = [], coin_decoherence_cycle: CoinDecoherenceCycle = None) -> None:
+    def __init__(self,backend: Backend ,system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class = None, coin_kwargs = {}, boundary_controls = [], coin_decoherence_cycle: CoinDecoherenceCycle = None, coin_initialiser = None) -> None:
         """
         Create a new `QuantumWalk` Object
         Args:
@@ -92,7 +93,14 @@ class QuantumWalk:
         # initialise state
         self.initial_states = initial_states
         self.initialise_states(self.initial_states)
-        self.initialise_symetric_coin_register()
+
+
+        if coin_initialiser == None:
+            self._coin_initialiser = SymetricInitialiser()
+        else:
+            self._coin_initialiser = coin_initialiser
+
+        self.initialise_coin_register()
 
         #store results
         self.results = None
@@ -109,8 +117,8 @@ class QuantumWalk:
                     if bit != '0':
                         self.quantum_circuit.x(self.state_registers[idx][bit_idx])
 
-    def initialise_symetric_coin_register(self):
-        self.quantum_circuit.u(pi/2,pi/2,3*pi/2,self.shift_coin_register[:])
+    def initialise_coin_register(self):
+        self._coin_initialiser.initialise(self.quantum_circuit, self.shift_coin_register)
 
     def build_ciruit(self) -> None:
         self.quantum_circuit = QuantumCircuit(self.shift_coin_register,*self.ancilla_registers,*self.boundary_control_registers,*self.state_registers)
@@ -592,7 +600,7 @@ class QuantumWalk:
             initial_states = self.initial_states
         self.build_ciruit()
         self.initialise_states(initial_states)
-        self.initialise_symetric_coin_register()
+        self.initialise_coin_register()
         
 
 
@@ -620,9 +628,9 @@ class QuantumWalk:
         
 
 class QuantumWalk3D(QuantumWalk):
-    def __init__(self,backend: Backend, system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class=None, coin_kwargs = {}, boundary_controls = [], coin_decoherence_cycle: CoinDecoherenceCycle = None) -> None:
+    def __init__(self,backend: Backend, system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class=None, coin_kwargs = {}, boundary_controls = [], coin_decoherence_cycle: CoinDecoherenceCycle = None, coin_initialiser = None) -> None:
         assert len(system_dimensions) == 3
-        super().__init__(backend,system_dimensions, initial_states, n_shift_coin_bits, coin_class, coin_kwargs, boundary_controls, coin_decoherence_cycle)
+        super().__init__(backend,system_dimensions, initial_states, n_shift_coin_bits, coin_class, coin_kwargs, boundary_controls, coin_decoherence_cycle, coin_initialiser)
 
     def step(self) -> None:
         super().step()
@@ -642,9 +650,9 @@ class QuantumWalk3D(QuantumWalk):
         self.reset_boundaries()
 
 class QuantumWalk2D(QuantumWalk):
-    def __init__(self,backend: Backend, system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class=None, coin_kwargs = {}, boundary_controls = [], coin_decoherence_cycle: CoinDecoherenceCycle = None) -> None:
+    def __init__(self,backend: Backend, system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class=None, coin_kwargs = {}, boundary_controls = [], coin_decoherence_cycle: CoinDecoherenceCycle = None, coin_initialiser = None) -> None:
         assert len(system_dimensions) == 2
-        super().__init__(backend,system_dimensions, initial_states, n_shift_coin_bits, coin_class, coin_kwargs, boundary_controls, coin_decoherence_cycle)
+        super().__init__(backend,system_dimensions, initial_states, n_shift_coin_bits, coin_class, coin_kwargs, boundary_controls, coin_decoherence_cycle, coin_initialiser)
 
     def step(self) -> None:
         super().step()
@@ -660,18 +668,14 @@ class QuantumWalk2D(QuantumWalk):
         self.apply_post_shift_operations()
         self.reset_boundaries()
 
-    def initialise_symetric_coin_register(self):
-        self.quantum_circuit.u(pi/2,pi/2,3*pi/2,self.shift_coin_register[0])
-        self.quantum_circuit.u(pi/2,3*pi/2,pi/2,self.shift_coin_register[1])
-
 
 class QuantumWalk1D(QuantumWalk):
-    def __init__(self,backend: Backend, system_dimensions: int, initial_states: str = None, n_shift_coin_bits: int = None, coin_class=None ,coin_kwargs = {}, boundary_controls = [], coin_decoherence_cycle: CoinDecoherenceCycle = None) -> None:
+    def __init__(self,backend: Backend, system_dimensions: int, initial_states: str = None, n_shift_coin_bits: int = None, coin_class=None ,coin_kwargs = {}, boundary_controls = [], coin_decoherence_cycle: CoinDecoherenceCycle = None, coin_initialiser = None) -> None:
         if type(system_dimensions) == int:
             system_dimensions = [system_dimensions]
         if initial_states is not None and type(initial_states) == str:
             initial_states = [initial_states]
-        super().__init__(backend,system_dimensions, initial_states, n_shift_coin_bits, coin_class, coin_kwargs, boundary_controls, coin_decoherence_cycle)
+        super().__init__(backend,system_dimensions, initial_states, n_shift_coin_bits, coin_class, coin_kwargs, boundary_controls, coin_decoherence_cycle, coin_initialiser)
 
 
     def step(self) -> None:
@@ -687,9 +691,9 @@ class QuantumWalk1D(QuantumWalk):
 
 class QuantumWalk2DIndependant(QuantumWalk):
 
-    def __init__(self,backend: Backend, system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class=None, coin_kwargs = {}, boundary_controls = [], coin_decoherence_cycle: CoinDecoherenceCycle = None) -> None:
+    def __init__(self,backend: Backend, system_dimensions: list, initial_states: list = None, n_shift_coin_bits: int = None, coin_class=None, coin_kwargs = {}, boundary_controls = [], coin_decoherence_cycle: CoinDecoherenceCycle = None, coin_initialiser = None) -> None:
         assert len(system_dimensions) == 2
-        super().__init__(backend,system_dimensions, initial_states, n_shift_coin_bits, coin_class, coin_kwargs, boundary_controls, coin_decoherence_cycle)
+        super().__init__(backend,system_dimensions, initial_states, n_shift_coin_bits, coin_class, coin_kwargs, boundary_controls, coin_decoherence_cycle, coin_initialiser)
 
     def step(self) -> None:
         super().step()
