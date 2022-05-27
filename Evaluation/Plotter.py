@@ -59,16 +59,20 @@ def plot_distribution2D(results,n_qubits,savepath,title = None, clear_fig = True
 def plot_distribution_2D_topological(results,n_qubits,savepath,title = None, clear_fig = True):
     plt.rcParams.update({'figure.figsize': (20,10)})
     plt.tight_layout(pad=0)
-    y,x,probability_density = results["dimension_0"],results["dimension_1"],results["probability_density"]
-    axes_limit = (2**n_qubits)-1
+    x,y,probability_density = results["dimension_0"],results["dimension_1"],results["probability_density"]
+
+    if type(n_qubits) == list:
+        axes_limit = [(2**n)-1 for n in n_qubits]
+    else:
+        axes_limit = [(2**n_qubits)-1 for _ in range(2)]
 
     fig, ax = plt.subplots(1,2,subplot_kw={"projection": "3d"})
     plt.subplots_adjust(wspace=0)
     plt.subplots_adjust(hspace=0)
 
     # Make data.
-    X = np.arange(0,axes_limit+1, 1, dtype=float)
-    Y = np.arange(0,axes_limit+1, 1, dtype=float)
+    X = np.arange(0,axes_limit[0]+1, 1, dtype=float)
+    Y = np.arange(0,axes_limit[1]+1, 1, dtype=float)
     X, Y = np.meshgrid(X, Y)
     Z = X*0
 
