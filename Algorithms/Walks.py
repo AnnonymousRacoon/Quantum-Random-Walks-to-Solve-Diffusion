@@ -237,14 +237,22 @@ class QuantumWalk:
 
     def apply_non_disruptive_boundary_cleanup(self):
         for boundary_control in self.boundary_controls:
+
             if type(boundary_control) == NonDisruptiveBoundaryControl:
                 ancilla_register = boundary_control.ancilla_register
 
                 ctrl_state = "1" + boundary_control.ctrl_state
                 n_control_bits = boundary_control.ctrl_size+1
 
-                    # DReversalGate = self.shift_coin.DReversalGate.control(n_control_bits,ctrl_state=ctrl_state , label = boundary.label)
+                DReversalGate = self.shift_coin.DReversalGate.control(n_control_bits,ctrl_state=ctrl_state)
                     # self.quantum_circuit.append(DReversalGate,[boundary_control.register[:]]+[ancilla_register[:]]+self.shift_coin_register[:])
+
+                # do not reflect inertia if false
+                if boundary_control.reflect_inertia == False:
+                    if boundary_control.register:
+                        self.quantum_circuit.append(DReversalGate,[boundary_control.register[:]]+[ancilla_register[:]]+self.shift_coin_register[:])
+                    else:
+                        self.quantum_circuit.append(DReversalGate,[ancilla_register[:]]+self.shift_coin_register[:])
 
 
                 if boundary_control.d_filter:
